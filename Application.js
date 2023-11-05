@@ -123,6 +123,10 @@ export function RenderFrame()
     //playerBatch.addInstance([cam.position[0], 1, 1]);
     playerBatch.updateInstance(0, [cam.position[0], 1, 1]);
 
+    renderData.setCameraData(0, cam.viewMatrix);
+    renderData.setCameraData(1, cam.projectionMatrix);
+    renderData.setCameraData(2, cam.invViewMatrix);
+    renderData.setCameraData(3, cam.invProjectionMatrix);
     renderData.cameraMatrix = mat4.multiply(mat4.create(), cam.projectionMatrix, cam.viewMatrix);
     renderData.instanceBatches = batches;
 

@@ -1,6 +1,7 @@
 struct FragmentInput {
-    @location(0) norm: vec3f,
-    @location(1) uv: vec2f,
+    @location(0) pos: vec3f,
+    @location(1) norm: vec3f,
+    @location(2) uv: vec2f,
 };
 
 @group(1) @binding(0) var mySampler: sampler;
@@ -18,8 +19,14 @@ fn screenPxRange(uv: vec2f) -> f32 {
     return max(0.5*dot(unitRange, screenTexSize), 1.0);
 }
 
+struct FragmentOutput {
+    @location(0) pos: vec4f,
+    @location(1) color: vec4f,
+    @location(2) normal: vec4f,
+};
+
 @fragment
-fn fragmentMain(input: FragmentInput) -> @location(0) vec4f 
+fn fragmentMain(input: FragmentInput) -> FragmentOutput
 {
     var bgColor: vec4f = vec4f(0, 0.2, 0.8, 0);
     var fgColor: vec4f = vec4f(0.4, 0.8, 0.2, 1);
@@ -37,6 +44,9 @@ fn fragmentMain(input: FragmentInput) -> @location(0) vec4f
         discard;
     }
 
-    var color = mix(bgColor, fgColor, min(borderBlend, 1));
-    return color;
+    var output: FragmentOutput;
+    output.pos = vec4f(input.pos, 1);
+    output.color = mix(bgColor, fgColor, min(borderBlend, 1));
+    output.normal = vec4f(input.norm, 1);
+    return output;
 }

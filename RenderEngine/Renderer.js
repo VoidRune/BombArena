@@ -53,8 +53,20 @@ export class RenderData
 {
     constructor()
     {
-        this.cameraMatrix = mat4.identity(mat4.create());
+        //this.view = mat4.identity(mat4.create());
+        //this.projection = mat4.identity(mat4.create());
+        //this.invView = mat4.identity(mat4.create());
+        //this.invProjection = mat4.identity(mat4.create());
+
+        this.cameraData = new Float32Array(16 * 4);
+
         this.instanceBatches = [];
+    }
+
+    setCameraData(id, data)
+    {
+        //mat4.fromTranslation(this.transforms.subarray(16 * id, 16 * (id + 1)), vec3.fromValues(p[0], p[1], p[2]));
+        mat4.copy(this.cameraData.subarray(16 * id, 16 * (id + 1)), data);
     }
 }
 
@@ -73,9 +85,13 @@ export default class Renderer
         format: canvasFormat,
         });
         
-        this.depthTexture;
+        this.positionAttachment;
+        this.colorAttachment;
+        this.normalAttachment;
+        this.depthAttachment;
 
         this.pipeline;
+        this.presentPipeline;
 
         this.quadVertices;
         this.quadIndices;
@@ -84,7 +100,7 @@ export default class Renderer
         this.fontPipeline;
 
         this.MAX_TRANSFORMS = 4096;
-        this.transforms = new Float32Array(16 * this.MAX_TRANSFORMS);   
+        this.transforms = new Float32Array(16 * this.MAX_TRANSFORMS);
 
         this.cameraUniformBuffer;
         this.SSBOUniformBuffer;
@@ -92,6 +108,9 @@ export default class Renderer
 
         this.globalFontBindGroup;
         this.fontBindGroup;
+
+        this.presentBindGroup;
+
         this.fontGenerator = new FontGenerator('res/font/Droidsansmono_ttf.csv');
         this.resourceCache = new ResourceCache(device);
     }
@@ -105,13 +124,33 @@ export default class Renderer
         const fragmentShader = await (await fetch("res/shaders/fragment.wgsl")).text();
         const fontVertexShader = await (await fetch("res/shaders/fontVertex.wgsl")).text();
         const fontFragmentShader = await (await fetch("res/shaders/fontFragment.wgsl")).text();
-    
+        const presentVertexShader = await (await fetch("res/shaders/presentVertex.wgsl")).text();
+        const presentFragmentShader = await (await fetch("res/shaders/presentFragment.wgsl")).text();
+
         const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
     
-        this.depthTexture = device.createTexture({
+        this.positionAttachment = device.createTexture({
+            size: [canvas.width, canvas.height],
+            format: 'rgba16float',
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+        });
+
+        this.colorAttachment = device.createTexture({
+            size: [canvas.width, canvas.height],
+            format: 'rgba8unorm',
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+        });
+            
+        this.normalAttachment = device.createTexture({
+            size: [canvas.width, canvas.height],
+            format: 'rgba8unorm',
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+        });
+
+        this.depthAttachment = device.createTexture({
             size: [canvas.width, canvas.height],
             format: 'depth24plus',
-            usage: GPUTextureUsage.RENDER_ATTACHMENT,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
         });
     
         const vertexBufferLayout = {
@@ -154,6 +193,11 @@ export default class Renderer
         device.queue.writeBuffer(this.quadVertexBuffer, /*bufferOffset=*/0, this.quadVertices);
         device.queue.writeBuffer(this.quadIndexBuffer, /*bufferOffset=*/0, this.quadIndices);
     
+        let pointSampler = device.createSampler({
+            magFilter: 'nearest',
+            minFilter: 'nearest',
+        });
+
         let linearSampler = device.createSampler({
             magFilter: 'linear',
             minFilter: 'linear',
@@ -206,7 +250,13 @@ export default class Renderer
                 }),
                 entryPoint: "fragmentMain",
                 targets: [{
-                format: canvasFormat
+                    format: 'rgba16float'
+                },
+                {
+                    format: 'rgba8unorm'
+                },
+                {
+                    format: 'rgba8unorm'
                 }]
             },
             primitive: {
@@ -217,7 +267,7 @@ export default class Renderer
             depthStencil: {
                 depthWriteEnabled: true,
                 depthCompare: 'less',
-                format: 'depth24plus',
+                format: this.depthAttachment.format,
             },
         });
     
@@ -236,8 +286,15 @@ export default class Renderer
                     code: fontFragmentShader
                 }),
                 entryPoint: "fragmentMain",
-                targets: [{
-                format: canvasFormat
+                targets: [
+                {
+                    format: 'rgba16float'
+                },
+                {
+                    format: 'rgba8unorm'
+                },
+                {
+                    format: 'rgba8unorm'
                 }]
             },
             primitive: {
@@ -248,7 +305,7 @@ export default class Renderer
             depthStencil: {
                 depthWriteEnabled: true,
                 depthCompare: 'less',
-                format: 'depth24plus',
+                format: this.depthAttachment.format,
             },
             colorStates: [{
                 format: 'rgba8unorm',
@@ -260,11 +317,37 @@ export default class Renderer
             }],
         });
 
+        this.presentPipeline = device.createRenderPipeline({
+            label: "Present pipeline",
+            layout: "auto",
+            vertex: {
+                module: device.createShaderModule({
+                    code: presentVertexShader
+                }),
+                entryPoint: "vertexMain",
+                buffers: [vertexBufferLayout]
+            },
+            fragment: {
+                module: device.createShaderModule({
+                    code: presentFragmentShader
+                }),
+                entryPoint: "fragmentMain",
+                targets: [{
+                format: canvasFormat
+                }]
+            },
+            primitive: {
+                topology: 'triangle-list',
+                cullMode: 'back',
+                frontFace: 'cw'
+            },
+        });
+
         this.resourceCache.materialBindLayout = this.pipeline.getBindGroupLayout(1);
     
         this.cameraUniformBuffer = device.createBuffer({
         label: "UBO",
-        size: 64, //matrix
+        size: 64 * 4, //matrix * 4
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
         device.queue.writeBuffer(this.cameraUniformBuffer, 0, mat4.identity(mat4.create()));
@@ -325,73 +408,144 @@ export default class Renderer
                 resource: font.createView()
             }],
         });
+
+        this.globalPresentBindGroup = device.createBindGroup({
+            label: "Global Present",
+            layout: this.presentPipeline.getBindGroupLayout(0),
+            entries: [{
+                binding: 0,
+                resource: { buffer: this.cameraUniformBuffer }
+            }],
+        });
+
+        this.presentBindGroup = device.createBindGroup({
+            label: "Present",
+            layout: this.presentPipeline.getBindGroupLayout(1),
+            entries: [
+            {
+                binding: 0,
+                resource: pointSampler
+            },
+            {
+                binding: 1,
+                resource: this.positionAttachment.createView()
+            },
+            {
+                binding: 2,
+                resource: this.colorAttachment.createView()
+            },
+            {
+                binding: 3,
+                resource: this.normalAttachment.createView()
+            },
+            {
+                binding: 4,
+                resource: this.depthAttachment.createView()
+            }],
+        });
     }
 
     Render(renderData)
     {
         let device = this.device;
 
-        device.queue.writeBuffer(this.cameraUniformBuffer, 0, renderData.cameraMatrix);
+        device.queue.writeBuffer(this.cameraUniformBuffer, 0, renderData.cameraData);
 
         const encoder = device.createCommandEncoder();
     
-        const pass = encoder.beginRenderPass({
-            colorAttachments: [{
-            view: this.context.getCurrentTexture().createView(),
-            clearValue: { r: 0.1, g: 0.4, b: 0.8, a: 1 },
-            loadOp: "clear",
-            storeOp: "store",
-            }],
-            depthStencilAttachment: {
-                view: this.depthTexture.createView(),
-          
-                depthClearValue: 1.0,
-                depthLoadOp: 'clear',
-                depthStoreOp: 'store',
-              },
-        });
-        pass.setBindGroup(0, this.globalBindGroup);
-    
-        let instanceOffset = 0;    
-        let updateSSBO = false;
-        let updateStart = 262144;
-        let updateEnd = 0;
-
-        pass.setPipeline(this.pipeline);
-        for (let i = 0; i < renderData.instanceBatches.length; i++)
         {
-            let b = renderData.instanceBatches[i];
-            this.transforms.set(b.transforms.subarray(0, 16 * b.count), 16 * instanceOffset);
-
-            pass.setBindGroup(1, this.resourceCache.materialBindGroups[b.texture]);
-            pass.setVertexBuffer(0, this.resourceCache.vertexBuffers[b.mesh]);
-            pass.setIndexBuffer(this.resourceCache.indexBuffers[b.mesh], "uint32");
-            pass.drawIndexed(this.resourceCache.indexLength[b.mesh], b.count, 0, 0, instanceOffset);  
-
-            updateSSBO |= b.dirty;
-            if(b.dirty)
-            {
-                if (updateStart > instanceOffset) updateStart = instanceOffset;
-                if (updateEnd < instanceOffset + b.count) updateEnd = instanceOffset + b.count;
-            }
+            const geometryPass = encoder.beginRenderPass({
+                colorAttachments: [
+                {
+                    view: this.positionAttachment.createView(),
+                    clearValue: { r: 0, g: 0, b: 0, a: 1 },
+                    loadOp: "clear",
+                    storeOp: "store",
+                },
+                {
+                    view: this.colorAttachment.createView(),
+                    clearValue: { r: 0.1, g: 0.4, b: 0.8, a: 1 },
+                    loadOp: "clear",
+                    storeOp: "store",
+                },
+                {
+                    view: this.normalAttachment.createView(),
+                    clearValue: { r: 0, g: 0, b: 0, a: 1 },
+                    loadOp: "clear",
+                    storeOp: "store",
+                }],
+                depthStencilAttachment: {
+                    view: this.depthAttachment.createView(),
             
-            instanceOffset += b.count;
-            b.dirty = false;
-        }
-        if(updateSSBO)
-        {
-            //console.log('Update', (updateEnd - updateStart));
-            device.queue.writeBuffer(this.SSBOUniformBuffer, updateStart * 64, this.transforms, updateStart * 16, (updateEnd - updateStart) * 16);
+                    depthClearValue: 1.0,
+                    depthLoadOp: 'clear',
+                    depthStoreOp: 'store',
+                },
+            });
+            geometryPass.setBindGroup(0, this.globalBindGroup);
+        
+            let instanceOffset = 0;    
+            let updateSSBO = false;
+            let updateStart = 262144;
+            let updateEnd = 0;
+
+            geometryPass.setPipeline(this.pipeline);
+            for (let i = 0; i < renderData.instanceBatches.length; i++)
+            {
+                let b = renderData.instanceBatches[i];
+                this.transforms.set(b.transforms.subarray(0, 16 * b.count), 16 * instanceOffset);
+
+                geometryPass.setBindGroup(1, this.resourceCache.materialBindGroups[b.texture]);
+                geometryPass.setVertexBuffer(0, this.resourceCache.vertexBuffers[b.mesh]);
+                geometryPass.setIndexBuffer(this.resourceCache.indexBuffers[b.mesh], "uint32");
+                geometryPass.drawIndexed(this.resourceCache.indexLength[b.mesh], b.count, 0, 0, instanceOffset);  
+
+                updateSSBO |= b.dirty;
+                if(b.dirty)
+                {
+                    if (updateStart > instanceOffset) updateStart = instanceOffset;
+                    if (updateEnd < instanceOffset + b.count) updateEnd = instanceOffset + b.count;
+                }
+                
+                instanceOffset += b.count;
+                b.dirty = false;
+            }
+            if(updateSSBO)
+            {
+                //console.log('Update', (updateEnd - updateStart));
+                device.queue.writeBuffer(this.SSBOUniformBuffer, updateStart * 64, this.transforms, updateStart * 16, (updateEnd - updateStart) * 16);
+            }
+
+            geometryPass.setBindGroup(0, this.globalFontBindGroup);
+            geometryPass.setPipeline(this.fontPipeline);
+            geometryPass.setBindGroup(1, this.fontBindGroup);
+            geometryPass.setVertexBuffer(0, this.quadVertexBuffer);
+            geometryPass.setIndexBuffer(this.quadIndexBuffer, "uint32");
+            geometryPass.drawIndexed(this.quadIndices.length, 1, 0, 0, 0);
+        
+            geometryPass.end();
         }
 
-        pass.setBindGroup(0, this.globalFontBindGroup);
-        pass.setPipeline(this.fontPipeline);
-        pass.setBindGroup(1, this.fontBindGroup);
-        pass.setVertexBuffer(0, this.quadVertexBuffer);
-        pass.setIndexBuffer(this.quadIndexBuffer, "uint32");
-        pass.drawIndexed(this.quadIndices.length, 1, 0, 0, 0);
-    
-        pass.end();
+        {
+            const presentPass = encoder.beginRenderPass({
+                colorAttachments: [{
+                view: this.context.getCurrentTexture().createView(),
+                clearValue: { r: 0.1, g: 0.4, b: 0.8, a: 1 },
+                loadOp: "clear",
+                storeOp: "store",
+                }],
+            });
+
+            
+            presentPass.setBindGroup(0, this.globalPresentBindGroup);
+            presentPass.setBindGroup(1, this.presentBindGroup);
+            presentPass.setPipeline(this.presentPipeline);
+            presentPass.setVertexBuffer(0, this.quadVertexBuffer);
+            presentPass.draw(6, 1, 0, 0, 0);
+
+            presentPass.end();
+        }
+
         device.queue.submit([encoder.finish()]);
     }
 }

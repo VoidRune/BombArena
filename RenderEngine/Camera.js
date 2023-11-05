@@ -3,7 +3,7 @@ import { vec3, mat4 } from '../Math/gl-matrix-module.js';
 export default class Camera
 {
     constructor(canvas, {
-        position = [0, 1,-2],
+        position = [0, 5,-2],
         sensitivity = 0.005, 
         movementSpeed = 2.5,
 
@@ -27,6 +27,8 @@ export default class Camera
 
         this.viewMatrix = mat4.create();
         this.projectionMatrix = mat4.create();
+        this.invViewMatrix = mat4.create();
+        this.invProjectionMatrix = mat4.create();
         this.recalculateProjection(fov, nearPlane, farPlane);
 
         this.keys = {};
@@ -62,6 +64,8 @@ export default class Camera
         );
 
         this.projectionMatrix[5] *= -1;
+
+        mat4.invert(this.invProjectionMatrix, this.projectionMatrix);
     }
 
     update(dt)
@@ -95,6 +99,7 @@ export default class Camera
         vec3.add(target, this.position, camForward);
 
         mat4.lookAt(this.viewMatrix, this.position, target, upInverted);
+        mat4.invert(this.invViewMatrix, this.viewMatrix);
     }
 
     mouseDownHandler(e) {
