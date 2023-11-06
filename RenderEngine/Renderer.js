@@ -150,7 +150,7 @@ export default class Renderer
         this.depthAttachment = device.createTexture({
             size: [canvas.width, canvas.height],
             format: 'depth24plus',
-            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT,
         });
     
         const vertexBufferLayout = {
@@ -437,10 +437,6 @@ export default class Renderer
             {
                 binding: 3,
                 resource: this.normalAttachment.createView()
-            },
-            {
-                binding: 4,
-                resource: this.depthAttachment.createView()
             }],
         });
     }
@@ -512,7 +508,7 @@ export default class Renderer
             }
             if(updateSSBO)
             {
-                //console.log('Update', (updateEnd - updateStart));
+                console.log('Update', (updateEnd - updateStart));
                 device.queue.writeBuffer(this.SSBOUniformBuffer, updateStart * 64, this.transforms, updateStart * 16, (updateEnd - updateStart) * 16);
             }
 

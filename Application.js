@@ -19,6 +19,8 @@ const context = canvas.getContext("webgpu");
 
 //canvas.width  = window.innerWidth;
 //canvas.height = window.innerHeight;
+//canvas.width  = 640;
+//canvas.height = 360;
 
 var cam = new Camera(canvas);
 var renderer = new Renderer(device, canvas, context);
@@ -131,4 +133,6 @@ export function RenderFrame()
     renderData.instanceBatches = batches;
 
     renderer.Render(renderData);
+
+    requestAnimationFrame(RenderFrame);
 }

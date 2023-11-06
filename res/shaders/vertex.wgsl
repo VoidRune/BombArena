@@ -8,7 +8,7 @@ struct CameraData {
 };
 
 @group(0) @binding(0) var<uniform> cam: CameraData;
-@group(0) @binding(1) var<storage> transforms: array<mat4x4<f32>, 4096>;
+@group(0) @binding(1) var<storage> transforms: array<mat4x4<f32>, 1024>;
 
 struct VertexOutput {
     @location(0) pos: vec4f,

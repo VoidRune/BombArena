@@ -45,7 +45,7 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput
     }
 
     var output: FragmentOutput;
-    output.pos = vec4f(input.pos, 1);
+    output.pos = vec4f(0, 0, 0, 0);
     output.color = mix(bgColor, fgColor, min(borderBlend, 1));
     output.normal = vec4f(input.norm, 1);
     return output;
