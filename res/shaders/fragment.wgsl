@@ -30,12 +30,12 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput
     let oneOverShadowDepthTextureSize = 1.0 / 1024.0;
     for (var y = -1; y <= 1; y++) {
         for (var x = -1; x <= 1; x++) {
-        let offset = vec2<f32>(vec2(x, y)) * oneOverShadowDepthTextureSize;
+            let offset = vec2<f32>(vec2(x, y)) * oneOverShadowDepthTextureSize;
 
-        visibility += textureSampleCompare(
-            shadowMap, shadowSampler,
-            input.shadowPos.xy + offset, input.shadowPos.z - 0.007
-        );
+            visibility += textureSampleCompare(
+                shadowMap, shadowSampler,
+                input.shadowPos.xy + offset, input.shadowPos.z - 0.007
+            );
         }
     }
     visibility /= 9.0;
@@ -48,5 +48,9 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput
     output.pos = input.pos;
     output.color = textureSample(texture, textureSampler, input.uv) * lightingFactor;
     output.normal = vec4f(input.norm, 1);
+    //if(input.shadowPos.x < 0 || input.shadowPos.x > 1 || input.shadowPos.y < 0 || input.shadowPos.y > 1)
+    //{
+    //    output.color = vec4f(1);
+    //}
     return output;
 }

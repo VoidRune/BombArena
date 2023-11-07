@@ -77,11 +77,6 @@ export class RenderData
         mat4.copy(this.cameraData.subarray(this.size, this.size + 4), data);
         this.size += 4;
     }
-    setCameraData(id, data)
-    {
-        //mat4.fromTranslation(this.transforms.subarray(16 * id, 16 * (id + 1)), vec3.fromValues(p[0], p[1], p[2]));
-        mat4.copy(this.cameraData.subarray(16 * id, 16 * (id + 1)), data);
-    }
 }
 
 export default class Renderer
@@ -200,7 +195,7 @@ export default class Renderer
         };
         
         let fontImageData = await loadTexture('res/font/DroidSansMono.png');
-        let font = createTexture(device, fontImageData);
+        let font = createTexture(device, fontImageData, false);
     
         this.quadVertices = new Float32Array(this.fontGenerator.vert);
         this.quadIndices = new Uint32Array(this.fontGenerator.ind);
@@ -420,7 +415,9 @@ export default class Renderer
             },
             {
                 binding: 2,
-                resource: device.createSampler({compare: 'less'}),
+                resource: device.createSampler({
+                    compare: 'less'
+                }),
             },
             {
                 binding: 3,

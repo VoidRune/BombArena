@@ -4,7 +4,7 @@ export async function loadTexture(url)
 {
     const response = await fetch( new URL(url, import.meta.url).toString() );
     const imageBitmap = await createImageBitmap(await response.blob(), { imageOrientation: 'flipY' });
-    
+
     return imageBitmap;
 }
 
