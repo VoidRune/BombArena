@@ -23,11 +23,15 @@ struct CameraData {
     var position = textureSample(positionAttachment, mySampler, input.uv);
     var color = textureSample(colorAttachment, mySampler, input.uv);
     var normal = textureSample(normalAttachment, mySampler, input.uv);
-    var metallic = normal.y;
+    var reflectivity = 0.0;
+	if(normal.y == 1.0)
+	{
+		reflectivity = 0.2;
+	}
 
 	//return color;
 	
-    if (metallic != 1.0f)
+    if (reflectivity < 0.005)
     {
 		return color;
 	}
@@ -35,7 +39,7 @@ struct CameraData {
     var rayOrigin = vec3f(cam.invView[3][0], cam.invView[3][1], cam.invView[3][2]);
 	var rayDirection = position.xyz - rayOrigin;
 
-    var maxDistance: f32 = min(2.0, length(rayDirection) - 1.0);
+    var maxDistance: f32 = min(2.5, length(rayDirection) - 1.0);
 
 	var reflectedDirection = normalize(reflect(normalize(rayDirection), normal.xyz));
 
@@ -49,7 +53,7 @@ struct CameraData {
 	var startUv = input.uv;
 	var endUv = endFrag.xy;
 
-	var sampleCount: f32 = 32.0;
+	var sampleCount: f32 = 40.0;
 	var dtUv = (endUv - startUv) / sampleCount;
 	var dtView = (endView - startView) / sampleCount;
 	var currUv = startUv;
@@ -76,9 +80,10 @@ struct CameraData {
 		var b = currPos.xyz - rayOrigin;
 		var la = a.x * a.x + a.y * a.y + a.z * a.z;
 		var lb = b.x * b.x + b.y * b.y + b.z * b.z;
-		if(lb >= la)
+		if(lb >= la && lb - la <= 0.5)
 		{
-			return textureSample(colorAttachment, mySampler, currUv);
+			var reflection = textureSample(colorAttachment, mySampler, currUv);
+			return mix(color, reflection, reflectivity);
 		}
 	}
 

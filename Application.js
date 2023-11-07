@@ -125,11 +125,17 @@ export function RenderFrame()
     //playerBatch.addInstance([cam.position[0], 1, 1]);
     playerBatch.updateInstance(0, [cam.position[0], 1, 1]);
 
-    renderData.setCameraData(0, cam.viewMatrix);
-    renderData.setCameraData(1, cam.projectionMatrix);
-    renderData.setCameraData(2, cam.invViewMatrix);
-    renderData.setCameraData(3, cam.invProjectionMatrix);
-    renderData.cameraMatrix = mat4.multiply(mat4.create(), cam.projectionMatrix, cam.viewMatrix);
+    renderData.reset();
+    renderData.pushMatrix(cam.viewMatrix);
+    renderData.pushMatrix(cam.projectionMatrix);
+    renderData.pushMatrix(cam.invViewMatrix);
+    renderData.pushMatrix(cam.invProjectionMatrix);
+    let lightPos = [Math.sin(time) * 5 + 8, 10, Math.cos(time) * 5 + 8];
+    let ortho = mat4.ortho(mat4.create(), -16, 16, -16, 16, -20, 20);
+    ortho[5] *= -1;
+    renderData.pushMatrix(mat4.multiply(mat4.create(), ortho, mat4.lookAt(mat4.create(), lightPos, [8, 0, 8], [0, -1, 0])));
+    renderData.pushVec4(lightPos);
+
     renderData.instanceBatches = batches;
 
     renderer.Render(renderData);

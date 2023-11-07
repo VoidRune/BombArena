@@ -58,11 +58,25 @@ export class RenderData
         //this.invView = mat4.identity(mat4.create());
         //this.invProjection = mat4.identity(mat4.create());
 
-        this.cameraData = new Float32Array(16 * 4);
-
+        this.cameraData = new Float32Array(16 * 8);
+        this.size = 0;
         this.instanceBatches = [];
     }
 
+    reset()
+    {
+        this.size = 0;
+    }
+    pushMatrix(data)
+    {
+        mat4.copy(this.cameraData.subarray(this.size, this.size + 16), data);
+        this.size += 16;
+    }
+    pushVec4(data)
+    {
+        mat4.copy(this.cameraData.subarray(this.size, this.size + 4), data);
+        this.size += 4;
+    }
     setCameraData(id, data)
     {
         //mat4.fromTranslation(this.transforms.subarray(16 * id, 16 * (id + 1)), vec3.fromValues(p[0], p[1], p[2]));
@@ -85,11 +99,15 @@ export default class Renderer
         format: canvasFormat,
         });
         
+        
+        this.SHADOWMAP_SIZE = 2048;
+        this.shadowmapAttachment;
         this.positionAttachment;
         this.colorAttachment;
         this.normalAttachment;
         this.depthAttachment;
 
+        this.shadowmapPipeline;
         this.pipeline;
         this.presentPipeline;
 
@@ -104,6 +122,7 @@ export default class Renderer
 
         this.cameraUniformBuffer;
         this.SSBOUniformBuffer;
+        this.globalShadowmapBindGroup;
         this.globalBindGroup;
 
         this.globalFontBindGroup;
@@ -120,6 +139,7 @@ export default class Renderer
         let device = this.device;
         let canvas = this.canvas;
 
+        const shadowmapVertes = await (await fetch("res/shaders/shadowmapVertex.wgsl")).text();
         const vertexShader = await (await fetch("res/shaders/vertex.wgsl")).text();
         const fragmentShader = await (await fetch("res/shaders/fragment.wgsl")).text();
         const fontVertexShader = await (await fetch("res/shaders/fontVertex.wgsl")).text();
@@ -129,6 +149,12 @@ export default class Renderer
 
         const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
     
+        this.shadowmapAttachment = device.createTexture({
+            size: [this.SHADOWMAP_SIZE, this.SHADOWMAP_SIZE],
+            format: 'depth24plus',
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+        });
+
         this.positionAttachment = device.createTexture({
             size: [canvas.width, canvas.height],
             format: 'rgba16float',
@@ -233,6 +259,28 @@ export default class Renderer
                 },
             ],
         });*/
+
+        this.shadowmapPipeline = device.createRenderPipeline({
+            label: "Shadowmap pipeline",
+            layout: "auto",
+            vertex: {
+                module: device.createShaderModule({
+                    code: shadowmapVertes
+                }),
+                entryPoint: "vertexMain",
+                buffers: [vertexBufferLayout]
+            },
+            primitive: {
+                topology: 'triangle-list',
+                cullMode: 'back',
+                frontFace: 'cw'
+            },
+            depthStencil: {
+                depthWriteEnabled: true,
+                depthCompare: 'less',
+                format: this.shadowmapAttachment.format,
+            },
+        });
 
         this.pipeline = device.createRenderPipeline({
             label: "Basic pipeline",
@@ -347,7 +395,7 @@ export default class Renderer
     
         this.cameraUniformBuffer = device.createBuffer({
         label: "UBO",
-        size: 64 * 4, //matrix * 4
+        size: 64 * 8, //matrix * 8
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         });
         device.queue.writeBuffer(this.cameraUniformBuffer, 0, mat4.identity(mat4.create()));
@@ -369,6 +417,27 @@ export default class Renderer
             {
                 binding: 1,
                 resource: { buffer: this.SSBOUniformBuffer }
+            },
+            {
+                binding: 2,
+                resource: device.createSampler({compare: 'less'}),
+            },
+            {
+                binding: 3,
+                resource: this.shadowmapAttachment.createView()
+            }],
+        });
+
+        this.globalShadowmapBindGroup = device.createBindGroup({
+            label: "Global shadowmap",
+            layout: this.shadowmapPipeline.getBindGroupLayout(0),
+            entries: [{
+                binding: 0,
+                resource: { buffer: this.cameraUniformBuffer }
+            },
+            {
+                binding: 1,
+                resource: { buffer: this.SSBOUniformBuffer }
             }],
         });
 
@@ -380,20 +449,6 @@ export default class Renderer
                 resource: { buffer: this.cameraUniformBuffer }
             }],
         });
-
-        //this.materialBindGroup = device.createBindGroup({
-        //    label: "Material",
-        //    layout: this.pipeline.getBindGroupLayout(1),
-        //    entries: [
-        //    {
-        //        binding: 0,
-        //        resource: linearSampler
-        //    },
-        //    {
-        //        binding: 1,
-        //        resource: texture.createView()
-        //    }],
-        //});
     
         this.fontBindGroup = device.createBindGroup({
             label: "Font",
@@ -448,7 +503,36 @@ export default class Renderer
         device.queue.writeBuffer(this.cameraUniformBuffer, 0, renderData.cameraData);
 
         const encoder = device.createCommandEncoder();
-    
+        
+        {
+            const shadowmapPass = encoder.beginRenderPass({
+                colorAttachments: [],
+                depthStencilAttachment: {
+                    view: this.shadowmapAttachment.createView(),
+            
+                    depthClearValue: 1.0,
+                    depthLoadOp: 'clear',
+                    depthStoreOp: 'store',
+                },
+            });
+            shadowmapPass.setBindGroup(0, this.globalShadowmapBindGroup);
+        
+            let instanceOffset = 0;    
+
+            shadowmapPass.setPipeline(this.shadowmapPipeline);
+            for (let i = 0; i < renderData.instanceBatches.length; i++)
+            {
+                let b = renderData.instanceBatches[i];
+                shadowmapPass.setVertexBuffer(0, this.resourceCache.vertexBuffers[b.mesh]);
+                shadowmapPass.setIndexBuffer(this.resourceCache.indexBuffers[b.mesh], "uint32");
+                shadowmapPass.drawIndexed(this.resourceCache.indexLength[b.mesh], b.count, 0, 0, instanceOffset);  
+                
+                instanceOffset += b.count;
+            }
+        
+            shadowmapPass.end();
+        }
+
         {
             const geometryPass = encoder.beginRenderPass({
                 colorAttachments: [
@@ -508,7 +592,7 @@ export default class Renderer
             }
             if(updateSSBO)
             {
-                console.log('Update', (updateEnd - updateStart));
+                //console.log('Update', (updateEnd - updateStart));
                 device.queue.writeBuffer(this.SSBOUniformBuffer, updateStart * 64, this.transforms, updateStart * 16, (updateEnd - updateStart) * 16);
             }
 
