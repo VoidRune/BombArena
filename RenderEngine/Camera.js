@@ -1,10 +1,10 @@
 import { vec3, mat4 } from '../Math/gl-matrix-module.js';
+//import Input from '../Input.js';
 
 export default class Camera
 {
-    constructor(canvas, {
+    constructor(canvas, input, {
         position = [0, 5,-2],
-        sensitivity = 0.005, 
         movementSpeed = 2.5,
 
         pitch = 0,
@@ -13,13 +13,13 @@ export default class Camera
         nearPlane = 0.1,
         farPlane = 1000.0,
     } = {}){
+        this.input = input;
         this.canvas = canvas;
 
         this.pitch = pitch;
         this.yaw = yaw;
 
         this.position = position;
-        this.sensitivity = sensitivity;
         this.movementSpeed = movementSpeed;
         this.fov = fov;
         this.nearPlane = nearPlane;
@@ -30,23 +30,6 @@ export default class Camera
         this.invViewMatrix = mat4.create();
         this.invProjectionMatrix = mat4.create();
         this.recalculateProjection(fov, nearPlane, farPlane);
-
-        this.keys = {};
-        this.mouseDown = false;
-
-        /* Init input handlers */
-        this.mouseDownHandler = this.mouseDownHandler.bind(this);
-        this.mouseUpHandler = this.mouseUpHandler.bind(this);
-        this.mouseMoveHandler = this.mouseMoveHandler.bind(this);
-        this.keydownHandler = this.keydownHandler.bind(this);
-        this.keyupHandler = this.keyupHandler.bind(this);
-
-        const doc = this.canvas.ownerDocument;
-        doc.addEventListener('keydown', this.keydownHandler);
-        doc.addEventListener('keyup', this.keyupHandler);
-        doc.addEventListener('mousemove', this.mouseMoveHandler);
-        doc.addEventListener('mousedown', this.mouseDownHandler);
-        doc.addEventListener('mouseup', this.mouseUpHandler);
     }
 
     recalculateProjection(fov, nearPlane = this.nearPlane, farPlane = this.farPlane)
@@ -70,6 +53,9 @@ export default class Camera
 
     update(dt)
     {
+        this.pitch = this.input.dx;
+        this.yaw = this.input.dy;
+
         const cy = Math.cos(this.yaw);
         const sy = Math.sin(this.yaw);
         const cp = Math.cos(this.pitch);
@@ -82,16 +68,16 @@ export default class Camera
         const camForward = [sy * cp, sp, cy * cp];
 
         const acc = vec3.create();
-        if (this.keys['KeyW']) { vec3.add(acc, acc, forward); }
-        if (this.keys['KeyS']) { vec3.sub(acc, acc, forward); }
-        if (this.keys['KeyD']) { vec3.add(acc, acc, right); }
-        if (this.keys['KeyA']) { vec3.sub(acc, acc, right); }
+        if (this.input.keys['KeyW']) { vec3.add(acc, acc, forward); }
+        if (this.input.keys['KeyS']) { vec3.sub(acc, acc, forward); }
+        if (this.input.keys['KeyD']) { vec3.add(acc, acc, right); }
+        if (this.input.keys['KeyA']) { vec3.sub(acc, acc, right); }
         vec3.normalize(acc, acc);
-        if (this.keys['Space']) { vec3.add(acc, acc, up); }
-        if (this.keys['ShiftLeft']) { vec3.sub(acc, acc, up); }
+        if (this.input.keys['Space']) { vec3.add(acc, acc, up); }
+        if (this.input.keys['ShiftLeft']) { vec3.sub(acc, acc, up); }
   
         let mul = dt * this.movementSpeed;
-        if (this.keys['KeyF']) { mul *= 5; }
+        if (this.input.keys['KeyF']) { mul *= 5; }
 
         vec3.mul(acc, vec3.fromValues(mul, mul, mul), acc)
         vec3.add(this.position, this.position, acc);
@@ -100,38 +86,5 @@ export default class Camera
 
         mat4.lookAt(this.viewMatrix, this.position, target, upInverted);
         mat4.invert(this.invViewMatrix, this.viewMatrix);
-    }
-
-    mouseDownHandler(e) {
-        this.mouseDown = true;
-    }
-
-    mouseUpHandler(e) {
-        this.mouseDown = false;
-    }
-
-    mouseMoveHandler(e) {
-        if(this.mouseDown == true)
-        {
-            const dx = e.movementX;
-            const dy = e.movementY;
-
-            this.pitch -= dy * this.sensitivity;
-            this.yaw   += dx * this.sensitivity;
-
-            const twopi = Math.PI * 2;
-            const halfpi_less = 1.5533430343;
-            
-            this.pitch = Math.min(Math.max(this.pitch, -halfpi_less), halfpi_less);
-            this.yaw = ((this.yaw % twopi) + twopi) % twopi;
-        }
-    }
-
-    keydownHandler(e) {
-        this.keys[e.code] = true;
-    }
-
-    keyupHandler(e) {
-        this.keys[e.code] = false;
     }
 }

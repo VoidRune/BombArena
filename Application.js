@@ -2,10 +2,9 @@
 import { vec3, mat4 } from './Math/gl-matrix-module.js';
 
 import Renderer, { InstancedBatch, RenderData } from './RenderEngine/Renderer.js';
+import Input from './Input.js';
 import Camera from './RenderEngine/Camera.js';
-import { cubeVertices, cubeIndices } from './RenderEngine/Cube.js';
 import { loadTexture, loadMesh } from './AssetLoader.js';
-import FontGenerator from './RenderEngine/FontGenerator.js';
 
 import { createTexture } from './RenderEngine/Device.js';
 
@@ -22,9 +21,9 @@ const context = canvas.getContext("webgpu");
 //canvas.width  = 640;
 //canvas.height = 360;
 
-var cam = new Camera(canvas);
 var renderer = new Renderer(device, canvas, context);
-
+var input = new Input(canvas);
+var cam = new Camera(canvas, input);
 var renderData = new RenderData();
 var playerBatch = new InstancedBatch();
 var batches = [];
@@ -121,6 +120,14 @@ export function RenderFrame()
 
     cam.update(dt);
 
+    
+    if (input.keys['KeyW']) { console.log('W'); }
+    if (input.keys['KeyS']) { console.log('S'); }
+    if (input.keys['KeyD']) { console.log('D'); }
+    if (input.keys['KeyA']) { console.log('A'); }
+    if (input.keys['Space']) { console.log('Space'); }
+    if (input.keys['ShiftLeft']) { console.log('Shift'); }
+    
     //playerBatch.reset();
     //playerBatch.addInstance([cam.position[0], 1, 1]);
     playerBatch.updateInstance(0, [cam.position[0], 1, 1]);
