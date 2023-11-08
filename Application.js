@@ -1,5 +1,5 @@
 
-import { vec3, mat4 } from './Math/gl-matrix-module.js';
+import { vec2, vec3, mat4 } from './Math/gl-matrix-module.js';
 
 import Renderer, { InstancedBatch, RenderData } from './RenderEngine/Renderer.js';
 import Input from './Input.js';
@@ -28,6 +28,10 @@ var renderData = new RenderData();
 var playerBatch = new InstancedBatch();
 var batches = [];
 
+var arena = [];
+var playerPos = [1.5, 0, 1.5];
+
+
 export async function Init()
 {
     let resourceCache = renderer.resourceCache;
@@ -37,7 +41,7 @@ export async function Init()
     
     await renderer.Initialize();
 
-	let arena = [
+	arena = [
 	[ '#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#' ],
 	[ '#','_','_','_','_','_','_','_','_','_','_','_','_','_','_','#' ],
 	[ '#','_','#','_','#','_','_','#','#','_','_','#','_','#','_','#' ],
@@ -97,8 +101,9 @@ export async function Init()
     batches.push(arenaTombstoneBatch);
     batches.push(arenaEnvironmentBatch);
 
-    playerBatch.setMesh(wall);
-    playerBatch.addInstance([1, 1, 1]);
+    let cylinder = resourceCache.addMesh(await loadMesh('res/meshes/cylinder.obj'));
+    playerBatch.setMesh(cylinder);
+    playerBatch.addInstance([0, 0, 0]);
     batches.push(playerBatch);
 
 
@@ -120,17 +125,59 @@ export function RenderFrame()
 
     cam.update(dt);
 
+    let movementSpeed = 2.5;
+    let velocity = [0, 0, 0];
+    if (input.keys['ArrowRight']) { velocity[0] += 1; }
+    if (input.keys['ArrowLeft']) { velocity[0] -= 1; }
+    if (input.keys['ArrowUp']) { velocity[2] += 1; }
+    if (input.keys['ArrowDown']) { velocity[2] -= 1; }
+
+    vec3.normalize(velocity, velocity);
+    vec3.scale(velocity, velocity, movementSpeed * dt);
+    let potentialPosition = vec3.add(vec3.create(), playerPos, velocity);
+
+    let po = vec2.fromValues(potentialPosition[0], potentialPosition[2]);
+	let vCurrentCell = vec2.floor(vec2.create(), vec2.fromValues(playerPos[0], playerPos[2]));
+	let vTargetCell = vec2.floor(vec2.create(), po);
     
-    if (input.keys['KeyW']) { console.log('W'); }
-    if (input.keys['KeyS']) { console.log('S'); }
-    if (input.keys['KeyD']) { console.log('D'); }
-    if (input.keys['KeyA']) { console.log('A'); }
-    if (input.keys['Space']) { console.log('Space'); }
-    if (input.keys['ShiftLeft']) { console.log('Shift'); }
     
+    let cellMin = vec2.min(vec2.create(), vCurrentCell, vTargetCell);
+    let cellMax = vec2.max(vec2.create(), vCurrentCell, vTargetCell);
+	let vAreaTL = vec2.max(vec2.create(), vec2.sub(vec2.create(), cellMin, vec2.fromValues(1, 1)), vec2.fromValues(0, 0));
+	let vAreaBR = vec2.min(vec2.create(), vec2.add(vec2.create(), cellMax, vec2.fromValues(1, 1)), vec2.fromValues(16, 16));
+    
+    
+	let playerRadius = 0.4;
+	let vCell = vec2.create();
+	let BL = 0.0;
+	let TR = 1.0;
+    
+	for (vCell[1] = vAreaTL[1]; vCell[1] <= vAreaBR[1]; vCell[1]++)
+	{
+        for (vCell[0] = vAreaTL[0]; vCell[0] <= vAreaBR[0]; vCell[0]++)
+		{
+            if (arena[vCell[1]][vCell[0]] == '#')
+			{
+
+                let vNearestPoint = vec2.create();
+				vNearestPoint[0] = Math.max(vCell[0] + BL, Math.min(po[0], vCell[0] + TR));
+				vNearestPoint[1] = Math.max(vCell[1] + BL, Math.min(po[1], vCell[1] + TR));
+				let vRayToNearest = vec2.sub(vec2.create(), vNearestPoint, po);
+				let fOverlap = playerRadius - vec2.length(vRayToNearest);
+				if (fOverlap == NaN) fOverlap = 0.0;
+                
+				if (fOverlap > 0.0)
+				{
+					vec2.sub(po, po, vec3.scale(vec2.create(), vec2.normalize(vec2.create(), vRayToNearest), fOverlap));
+                }
+			}
+		}
+	}
+    playerPos[0] = po[0];
+    playerPos[2] = po[1];
     //playerBatch.reset();
     //playerBatch.addInstance([cam.position[0], 1, 1]);
-    playerBatch.updateInstance(0, [cam.position[0], 1, 1]);
+    playerBatch.updateInstance(0, playerPos);
 
     renderData.reset();
     renderData.pushMatrix(cam.viewMatrix);
