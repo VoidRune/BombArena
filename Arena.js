@@ -24,17 +24,17 @@ export default class Arena
 
         this.arenaData = [
             [ '#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#' ],
-            [ '#','_','_','_','_','_','_','_','_','_','_','_','_','_','_','#' ],
-            [ '#','_','#','_','#','_','_','#','#','_','_','#','_','#','_','#' ],
-            [ '#','_','_','_','_','_','#','_','_','#','_','_','_','_','_','#' ],
+            [ '#','_','_','_','_','O','_','_','_','_','_','_','_','_','_','#' ],
+            [ '#','_','#','_','#','O','_','#','#','_','_','#','_','#','_','#' ],
+            [ '#','_','_','_','_','_','#','O','O','#','_','_','_','_','_','#' ],
             [ '#','_','#','_','#','_','_','_','_','_','_','#','_','#','_','#' ],
             [ '#','_','_','_','_','_','T','_','_','#','_','_','_','_','_','#' ],
             [ '#','_','_','T','_','T','T','_','_','#','#','_','T','_','_','#' ],
+            [ '#','_','#','O','_','_','_','_','_','_','_','_','_','#','_','#' ],
             [ '#','_','#','_','_','_','_','_','_','_','_','_','_','#','_','#' ],
-            [ '#','_','#','_','_','_','_','_','_','_','_','_','_','#','_','#' ],
-            [ '#','_','_','T','_','#','#','_','_','T','T','_','T','_','_','#' ],
-            [ '#','_','_','_','_','_','#','_','_','T','_','_','_','_','_','#' ],
-            [ '#','_','#','_','#','_','_','_','_','_','_','#','_','#','_','#' ],
+            [ '#','_','O','T','_','#','#','_','_','T','T','_','T','_','_','#' ],
+            [ '#','_','O','_','_','_','#','_','_','T','_','_','_','_','_','#' ],
+            [ '#','_','#','O','#','_','_','_','_','_','_','#','_','#','_','#' ],
             [ '#','_','_','_','_','_','#','_','_','#','_','_','_','_','_','#' ],
             [ '#','_','#','_','#','_','_','#','#','_','_','#','_','#','_','#' ],
             [ '#','_','_','_','_','_','_','_','_','_','_','_','_','_','_','#' ],
@@ -47,6 +47,7 @@ export default class Arena
         let wall = new Tile();
         wall.mesh = 0;
         wall.texture = 0;
+        wall.collider = [0, 0, 1, 1];
         this.tiles['#'] = wall;
         let floor = new Tile();
         floor.mesh = 1;
@@ -55,7 +56,13 @@ export default class Arena
         let tombstone = new Tile();
         tombstone.mesh = 2;
         tombstone.texture = 1;
+        tombstone.collider = [0.2, 0.2, 0.8, 0.8];
         this.tiles['T'] = tombstone;
+        let obstacle = new Tile();
+        obstacle.mesh = 3;
+        obstacle.texture = 1;
+        obstacle.collider = [0, 0, 0.5, 0.5, 0.5, 0.5, 1, 1];
+        this.tiles['O'] = obstacle;
         this.buildArena();
     }
 
@@ -71,28 +78,31 @@ export default class Arena
         let vAreaTL = vec2.max(vec2.create(), vec2.sub(vec2.create(), cellMin, vec2.fromValues(1, 1)), vec2.fromValues(0, 0));
         let vAreaBR = vec2.min(vec2.create(), vec2.add(vec2.create(), cellMax, vec2.fromValues(1, 1)), vec2.fromValues(16, 16));
         
-        let playerRadius = 0.4;
+        let playerRadius = radius;
         let vCell = vec2.create();
-        let BL = 0.0;
-        let TR = 1.0;
-        
+
         for (vCell[1] = vAreaTL[1]; vCell[1] <= vAreaBR[1]; vCell[1]++)
         {
             for (vCell[0] = vAreaTL[0]; vCell[0] <= vAreaBR[0]; vCell[0]++)
             {
-                if (this.arenaData[vCell[1]][vCell[0]] == '#')
+                let colliders = this.tiles[this.arenaData[vCell[1]][vCell[0]]].collider;
+                if (colliders.length != 0)
                 {
-    
-                    let vNearestPoint = vec2.create();
-                    vNearestPoint[0] = Math.max(vCell[0] + BL, Math.min(nextPos[0], vCell[0] + TR));
-                    vNearestPoint[1] = Math.max(vCell[1] + BL, Math.min(nextPos[1], vCell[1] + TR));
-                    let vRayToNearest = vec2.sub(vec2.create(), vNearestPoint, nextPos);
-                    let fOverlap = playerRadius - vec2.length(vRayToNearest);
-                    if (fOverlap == NaN) fOverlap = 0.0;
-                    
-                    if (fOverlap > 0.0)
+                    for(let i = 0; i < colliders.length; i+=4)
                     {
-                        vec2.sub(nextPos, nextPos, vec3.scale(vec2.create(), vec2.normalize(vec2.create(), vRayToNearest), fOverlap));
+                        let BL = [colliders[i + 0], colliders[i + 1]];
+                        let TR = [colliders[i + 2], colliders[i + 3]];
+                        let vNearestPoint = vec2.create();
+                        vNearestPoint[0] = Math.max(vCell[0] + BL[0], Math.min(nextPos[0], vCell[0] + TR[0]));
+                        vNearestPoint[1] = Math.max(vCell[1] + BL[1], Math.min(nextPos[1], vCell[1] + TR[1]));
+                        let vRayToNearest = vec2.sub(vec2.create(), vNearestPoint, nextPos);
+                        let fOverlap = playerRadius - vec2.length(vRayToNearest);
+                        if (fOverlap == NaN) fOverlap = 0.0;
+                        
+                        if (fOverlap > 0.0)
+                        {
+                            vec2.sub(nextPos, nextPos, vec3.scale(vec2.create(), vec2.normalize(vec2.create(), vRayToNearest), fOverlap));
+                        }
                     }
                 }
             }
@@ -109,10 +119,14 @@ export default class Arena
     setTile(x, y, newTile)
     {
         this.arenaData[y][x] = newTile;
+        this.arenaChanged = true;
     }
 
     updateArena() 
     {
+        if(!this.arenaChanged)
+            return;
+
         for (const [key, value] of Object.entries(this.batches)) 
         {
             value.reset();
@@ -145,8 +159,6 @@ export default class Arena
                     batch.mesh = t.mesh;
                     batch.texture = t.texture;
                     
-
-
                     this.batches[tile] = batch;
                 }
 

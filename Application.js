@@ -42,6 +42,7 @@ export async function Init()
     let wall = resourceCache.addMesh(await loadMesh('res/meshes/wall.obj'));
     let floor = resourceCache.addMesh(await loadMesh('res/meshes/floor.obj'));
     let tombstone = resourceCache.addMesh(await loadMesh('res/meshes/tombstone.obj'));
+    let obstacle = resourceCache.addMesh(await loadMesh('res/meshes/obstacle.obj'));
     let environment = resourceCache.addMesh(await loadMesh('res/meshes/environment.obj'));
     let texture1 = resourceCache.addTexture(await loadTexture('res/textures/stoneWall.png'));
     let texture2 = resourceCache.addTexture(await loadTexture('res/textures/stoneTiles.png'));
@@ -49,8 +50,6 @@ export async function Init()
     arenaEnvironmentBatch.setMesh(environment);
     arenaEnvironmentBatch.addInstance([0, 0, 0]);
     
-    //updateArena(arena)
-
     //batches.push(arenaWallBatch);
     //batches.push(arenaFloorBatch);
     //batches.push(arenaTombstoneBatch);
@@ -86,10 +85,10 @@ function explodeBomb(coords, radius) {
     let [x, y] = coords;
 
     const directions = [
-        [0, -1],
-        [0, 1],
+        [ 0,-1],
+        [ 0, 1],
         [-1, 0],
-        [1, 0]
+        [ 1, 0]
     ];
 
     let dirty = false;
