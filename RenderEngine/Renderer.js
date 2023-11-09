@@ -126,6 +126,7 @@ export default class Renderer
         this.presentBindGroup;
 
         this.fontGenerator = new FontGenerator('res/font/Droidsansmono_ttf.csv');
+        this.fontGenerator.init();
         this.resourceCache = new ResourceCache(device);
     }
 
@@ -133,6 +134,7 @@ export default class Renderer
     {
         let device = this.device;
         let canvas = this.canvas;
+
 
         const shadowmapVertes = await (await fetch("res/shaders/shadowmapVertex.wgsl")).text();
         const vertexShader = await (await fetch("res/shaders/vertex.wgsl")).text();
@@ -520,11 +522,14 @@ export default class Renderer
             for (let i = 0; i < renderData.instanceBatches.length; i++)
             {
                 let b = renderData.instanceBatches[i];
-                shadowmapPass.setVertexBuffer(0, this.resourceCache.vertexBuffers[b.mesh]);
-                shadowmapPass.setIndexBuffer(this.resourceCache.indexBuffers[b.mesh], "uint32");
-                shadowmapPass.drawIndexed(this.resourceCache.indexLength[b.mesh], b.count, 0, 0, instanceOffset);  
-                
-                instanceOffset += b.count;
+                if(b.count > 0)
+                {
+                    shadowmapPass.setVertexBuffer(0, this.resourceCache.vertexBuffers[b.mesh]);
+                    shadowmapPass.setIndexBuffer(this.resourceCache.indexBuffers[b.mesh], "uint32");
+                    shadowmapPass.drawIndexed(this.resourceCache.indexLength[b.mesh], b.count, 0, 0, instanceOffset);  
+                    
+                    instanceOffset += b.count;
+                }
             }
         
             shadowmapPass.end();
@@ -570,22 +575,26 @@ export default class Renderer
             for (let i = 0; i < renderData.instanceBatches.length; i++)
             {
                 let b = renderData.instanceBatches[i];
-                this.transforms.set(b.transforms.subarray(0, 16 * b.count), 16 * instanceOffset);
-
-                geometryPass.setBindGroup(1, this.resourceCache.materialBindGroups[b.texture]);
-                geometryPass.setVertexBuffer(0, this.resourceCache.vertexBuffers[b.mesh]);
-                geometryPass.setIndexBuffer(this.resourceCache.indexBuffers[b.mesh], "uint32");
-                geometryPass.drawIndexed(this.resourceCache.indexLength[b.mesh], b.count, 0, 0, instanceOffset);  
-
-                updateSSBO |= b.dirty;
-                if(b.dirty)
+                if(b.count > 0)
                 {
-                    if (updateStart > instanceOffset) updateStart = instanceOffset;
-                    if (updateEnd < instanceOffset + b.count) updateEnd = instanceOffset + b.count;
+  
+                    this.transforms.set(b.transforms.subarray(0, 16 * b.count), 16 * instanceOffset);
+
+                    geometryPass.setBindGroup(1, this.resourceCache.materialBindGroups[b.texture]);
+                    geometryPass.setVertexBuffer(0, this.resourceCache.vertexBuffers[b.mesh]);
+                    geometryPass.setIndexBuffer(this.resourceCache.indexBuffers[b.mesh], "uint32");
+                    geometryPass.drawIndexed(this.resourceCache.indexLength[b.mesh], b.count, 0, 0, instanceOffset);  
+
+                    updateSSBO |= b.dirty;
+                    if(b.dirty)
+                    {
+                        if (updateStart > instanceOffset) updateStart = instanceOffset;
+                        if (updateEnd < instanceOffset + b.count) updateEnd = instanceOffset + b.count;
+                    }
+                    
+                    instanceOffset += b.count;
+                    b.dirty = false;
                 }
-                
-                instanceOffset += b.count;
-                b.dirty = false;
             }
             if(updateSSBO)
             {

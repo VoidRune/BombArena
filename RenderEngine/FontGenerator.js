@@ -10,7 +10,6 @@ export default class FontGenerator
         this.ind = [];
         this.chars = {};
         this.indIndex = 0;
-        this.init();
     }
 
     async init()

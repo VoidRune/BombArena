@@ -1,10 +1,11 @@
 
-import { vec2, vec3, mat4 } from './Math/gl-matrix-module.js';
+import { vec3, mat4 } from './Math/gl-matrix-module.js';
 
 import Renderer, { InstancedBatch, RenderData } from './RenderEngine/Renderer.js';
 import Input from './Input.js';
 import Camera from './RenderEngine/Camera.js';
 import { loadTexture, loadMesh } from './AssetLoader.js';
+import Arena from './Arena.js';
 
 if (!navigator.gpu) throw new Error("WebGPU not supported on this browser.");
 const adapter = await navigator.gpu.requestAdapter();
@@ -22,31 +23,12 @@ var input = new Input(canvas);
 var cam = new Camera(canvas, input);
 var renderData = new RenderData();
 var playerBatch = new InstancedBatch();
-var arenaWallBatch = new InstancedBatch();
-var arenaFloorBatch = new InstancedBatch();
-var arenaTombstoneBatch = new InstancedBatch();
 var arenaEnvironmentBatch = new InstancedBatch();
 var batches = [];
 
 let playerPos = [1.5, 0, 1.5];
-let arena = [
-	[ '#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#' ],
-	[ '#','_','_','_','_','_','_','_','_','_','_','_','_','_','_','#' ],
-	[ '#','_','#','_','#','_','_','#','#','_','_','#','_','#','_','#' ],
-	[ '#','_','_','_','_','_','#','_','_','#','_','_','_','_','_','#' ],
-	[ '#','_','#','_','#','_','_','_','_','_','_','#','_','#','_','#' ],
-	[ '#','_','_','_','_','_','T','_','_','#','_','_','_','_','_','#' ],
-	[ '#','_','_','T','_','T','T','_','_','#','#','_','T','_','_','#' ],
-	[ '#','_','#','_','_','_','_','_','_','_','_','_','_','#','_','#' ],
-	[ '#','_','#','_','_','_','_','_','_','_','_','_','_','#','_','#' ],
-	[ '#','_','_','T','_','#','#','_','_','T','T','_','T','_','_','#' ],
-	[ '#','_','_','_','_','_','#','_','_','T','_','_','_','_','_','#' ],
-	[ '#','_','#','_','#','_','_','_','_','_','_','#','_','#','_','#' ],
-	[ '#','_','_','_','_','_','#','_','_','#','_','_','_','_','_','#' ],
-	[ '#','_','#','_','#','_','_','#','#','_','_','#','_','#','_','#' ],
-	[ '#','_','_','_','_','_','_','_','_','_','_','_','_','_','_','#' ],
-	[ '#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#' ]];
-let arenaChanged = false
+
+const arena = new Arena();
 
 export async function Init()
 {
@@ -64,20 +46,19 @@ export async function Init()
     let texture1 = resourceCache.addTexture(await loadTexture('res/textures/stoneWall.png'));
     let texture2 = resourceCache.addTexture(await loadTexture('res/textures/stoneTiles.png'));
     
-    arenaWallBatch.setMesh(wall);
-    arenaWallBatch.setTexture(texture1);
-    arenaFloorBatch.setMesh(floor);
-    arenaFloorBatch.setTexture(texture2);
-    arenaTombstoneBatch.setMesh(tombstone);
     arenaEnvironmentBatch.setMesh(environment);
     arenaEnvironmentBatch.addInstance([0, 0, 0]);
     
-    updateArena(arena)
+    //updateArena(arena)
 
-    batches.push(arenaWallBatch);
-    batches.push(arenaFloorBatch);
-    batches.push(arenaTombstoneBatch);
+    //batches.push(arenaWallBatch);
+    //batches.push(arenaFloorBatch);
+    //batches.push(arenaTombstoneBatch);
     batches.push(arenaEnvironmentBatch);
+    for (const [key, value] of Object.entries(arena.batches)) 
+    {
+        batches.push(value);
+    }
 
     let cylinder = resourceCache.addMesh(await loadMesh('res/meshes/cylinder.obj'));
     playerBatch.setMesh(cylinder);
@@ -92,35 +73,11 @@ export async function Init()
     batches.push(batchTeapot);
 }
 
-function updateArena() {
-    arenaWallBatch.reset()
-    arenaFloorBatch.reset()
-    arenaTombstoneBatch.reset()
-    for(let y = 0; y < arena.length; y++)
-    {
-        for(let x = 0; x < arena[y].length; x++)
-        {
-            let tile = arena[y][x];
-            if(tile == '#')
-            {
-                arenaWallBatch.addInstance([x, 0, y]);
-            }
-            else if(tile == '_')
-            {
-                arenaFloorBatch.addInstance([x, 0, y]);
-            }
-            else if(tile == 'T')
-            {
-                arenaTombstoneBatch.addInstance([x, 0, y]);
-            }
-        }
-    }
-}
 
 let gameLoop = setInterval(() => {
-    if(arenaChanged) {
-        updateArena()
-        arenaChanged = false
+    if(true) {
+        //updateArena()
+        //arenaChanged = false
     }
 }, 50)
 
@@ -135,31 +92,37 @@ function explodeBomb(coords, radius) {
         [1, 0]
     ];
 
+    let dirty = false;
     for (let [dx, dy] of directions) {
         for (let i = 1; i <= radius; i++) {
             let newX = x + dx * i;
             let newY = y + dy * i;
 
-            if (newX < 0 || newX >= arena.length || newY < 0 || newY >= arena[newX].length) {
+            if (newX < 0 || newX >= arena.arenaData.length ||
+                newY < 0 || newY >= arena.arenaData[newX].length) {
                 break
             }
 
-            if (arena[newX][newY] === '#') {
+            let t = arena.getTile(newX, newY);
+
+            if (t === '#') {
                 break
             }
-
-            if (arena[newX][newY] === 'T') {
-                arena[newX][newY] = '_';
+            else if (t === 'T') {
+                arena.setTile(newX, newY, '_');
+                dirty = true;
                 break
             }
-
-            if (arena[newX][newY] === '_') {
+            else if (t === '_') {
                 continue
             }
         }
     }
 
-    arenaChanged = true;
+    if(dirty)
+    {
+        arena.updateArena();
+    }
 }
 
 
@@ -180,49 +143,19 @@ export function RenderFrame()
     if (input.keys['ArrowUp']) { velocity[2] += 1; }
     if (input.keys['ArrowDown']) { velocity[2] -= 1; }
 
+    
     vec3.normalize(velocity, velocity);
     vec3.scale(velocity, velocity, movementSpeed * dt);
-    let potentialPosition = vec3.add(vec3.create(), playerPos, velocity);
+    
+    arena.collideCircle(playerPos, velocity, 0.4);
+    
+    if (input.keys['KeyE']) 
+    { 
+        arena.setTile(Math.floor(playerPos[0]), Math.floor(playerPos[2]), '#');
+        arena.updateArena(); 
 
-    let po = vec2.fromValues(potentialPosition[0], potentialPosition[2]);
-	let vCurrentCell = vec2.floor(vec2.create(), vec2.fromValues(playerPos[0], playerPos[2]));
-	let vTargetCell = vec2.floor(vec2.create(), po);
-    
-    
-    let cellMin = vec2.min(vec2.create(), vCurrentCell, vTargetCell);
-    let cellMax = vec2.max(vec2.create(), vCurrentCell, vTargetCell);
-	let vAreaTL = vec2.max(vec2.create(), vec2.sub(vec2.create(), cellMin, vec2.fromValues(1, 1)), vec2.fromValues(0, 0));
-	let vAreaBR = vec2.min(vec2.create(), vec2.add(vec2.create(), cellMax, vec2.fromValues(1, 1)), vec2.fromValues(16, 16));
-    
-    
-	let playerRadius = 0.4;
-	let vCell = vec2.create();
-	let BL = 0.0;
-	let TR = 1.0;
-    
-	for (vCell[1] = vAreaTL[1]; vCell[1] <= vAreaBR[1]; vCell[1]++)
-	{
-        for (vCell[0] = vAreaTL[0]; vCell[0] <= vAreaBR[0]; vCell[0]++)
-		{
-            if (arena[vCell[1]][vCell[0]] == '#')
-			{
-
-                let vNearestPoint = vec2.create();
-				vNearestPoint[0] = Math.max(vCell[0] + BL, Math.min(po[0], vCell[0] + TR));
-				vNearestPoint[1] = Math.max(vCell[1] + BL, Math.min(po[1], vCell[1] + TR));
-				let vRayToNearest = vec2.sub(vec2.create(), vNearestPoint, po);
-				let fOverlap = playerRadius - vec2.length(vRayToNearest);
-				if (fOverlap == NaN) fOverlap = 0.0;
-                
-				if (fOverlap > 0.0)
-				{
-					vec2.sub(po, po, vec3.scale(vec2.create(), vec2.normalize(vec2.create(), vRayToNearest), fOverlap));
-                }
-			}
-		}
-	}
-    playerPos[0] = po[0];
-    playerPos[2] = po[1];
+        explodeBomb([Math.floor(playerPos[0]), Math.floor(playerPos[2])], 5);
+    }
     //playerBatch.reset();
     //playerBatch.addInstance([cam.position[0], 1, 1]);
     playerBatch.updateInstance(0, playerPos);
