@@ -43,13 +43,13 @@ export async function Init()
     
     await renderer.Initialize();
 
-    let wall = resourceCache.addMesh(await loadMesh('res/meshes/wall.obj'));
-    let floor = resourceCache.addMesh(await loadMesh('res/meshes/floor.obj'));
-    let tombstone = resourceCache.addMesh(await loadMesh('res/meshes/tombstone.obj'));
-    let obstacle = resourceCache.addMesh(await loadMesh('res/meshes/obstacle.obj'));
-    let environment = resourceCache.addMesh(await loadMesh('res/meshes/environment.obj'));
-    let texture1 = resourceCache.addTexture(await loadTexture('res/textures/stoneWall.png'));
-    let texture2 = resourceCache.addTexture(await loadTexture('res/textures/stoneTiles.png'));
+    let wall = resourceCache.addMesh(await loadMesh('/res/meshes/wall.obj'));
+    let floor = resourceCache.addMesh(await loadMesh('/res/meshes/floor.obj'));
+    let tombstone = resourceCache.addMesh(await loadMesh('/res/meshes/tombstone.obj'));
+    let obstacle = resourceCache.addMesh(await loadMesh('/res/meshes/obstacle.obj'));
+    let environment = resourceCache.addMesh(await loadMesh('/res/meshes/environment.obj'));
+    let texture1 = resourceCache.addTexture(await loadTexture('/res/textures/stoneWall.png'));
+    let texture2 = resourceCache.addTexture(await loadTexture('/res/textures/stoneTiles.png'));
     
     arenaEnvironmentBatch.setMesh(environment);
     arenaEnvironmentBatch.addInstance([0, 0, 0]);

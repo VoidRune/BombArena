@@ -204,7 +204,7 @@ export default class Renderer
             }],
         };
         
-        let fontImageData = await loadTexture('res/font/DroidSansMono.png');
+        let fontImageData = await loadTexture('/res/font/DroidSansMono.png');
         let font = createTexture(device, fontImageData, false);
     
         this.quadVertices = new Float32Array(this.fontGenerator.vert);
