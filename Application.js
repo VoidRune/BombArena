@@ -6,6 +6,7 @@ import Input from './Input.js';
 import Camera from './RenderEngine/Camera.js';
 import { loadTexture, loadMesh } from './AssetLoader.js';
 import Arena from './Arena.js';
+import { Particle } from './RenderEngine/ParticleSystem.js';
 
 if (!navigator.gpu) throw new Error("WebGPU not supported on this browser.");
 const adapter = await navigator.gpu.requestAdapter();
@@ -19,6 +20,7 @@ const context = canvas.getContext("webgpu");
 //canvas.height = window.innerHeight;
 
 var renderer = new Renderer(device, canvas, context);
+var particleSystem;
 var input = new Input(canvas);
 var cam = new Camera(canvas, input);
 var renderData = new RenderData();
@@ -34,6 +36,8 @@ export async function Init()
 {
     let resourceCache = renderer.resourceCache;
     let fontGenerator = renderer.fontGenerator;
+    particleSystem = renderer.particleSystem;
+    await fontGenerator.init();
     let str = await (await fetch("res/shaders/fontFragment.wgsl")).text();
     fontGenerator.addText(str, 0, 8, 0);
     
@@ -149,9 +153,21 @@ export function RenderFrame()
     arena.collideCircle(playerPos, velocity, 0.4);
     
     if (input.keys['KeyE']) 
-    { 
-        arena.setTile(Math.floor(playerPos[0]), Math.floor(playerPos[2]), '#');
-        arena.updateArena(); 
+    {
+        let particle = new Particle();
+        particle.position = [playerPos[0], playerPos[1] + 1.0, playerPos[2]];
+        particle.velocity = [(Math.random() - 0.5) * 2.0, (Math.random() - 0.5) * 2.0, (Math.random() - 0.5) * 2.0];
+        particle.radiusStart = Math.random() * 0.3 + 0.1;
+        particle.colorStart = [Math.random() * 0.5 + 0.5, 0.2, 0.2];
+        particle.colorEnd = [0.2, 0.2, Math.random() * 0.5 + 0.5];
+        particle.radiusEnd = 0.0;
+        particle.rotationStart = Math.random();
+        particle.rotationEnd = 1.0 + Math.random();
+        particle.lifetime = Math.random() * 1.5 + 0.5;
+        particleSystem.emit(time, particle);
+
+        //arena.setTile(Math.floor(playerPos[0]), Math.floor(playerPos[2]), '#');
+        //arena.updateArena(); 
 
         explodeBomb([Math.floor(playerPos[0]), Math.floor(playerPos[2])], 5);
     }
@@ -172,6 +188,7 @@ export function RenderFrame()
 
     renderData.instanceBatches = batches;
 
+    particleSystem.update(time, dt);
     renderer.Render(renderData);
 
     requestAnimationFrame(RenderFrame);

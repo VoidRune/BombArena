@@ -5,6 +5,7 @@ import { createTexture } from './Device.js';
 import { loadTexture, loadMesh } from '../AssetLoader.js';
 import FontGenerator from './FontGenerator.js';
 import ResourceCache from './ResourceCache.js';
+import ParticleSystem from './ParticleSystem.js';
 
 export class InstancedBatch
 {
@@ -104,6 +105,7 @@ export default class Renderer
 
         this.shadowmapPipeline;
         this.pipeline;
+        this.billboardPipeline;
         this.presentPipeline;
 
         this.quadVertices;
@@ -120,14 +122,18 @@ export default class Renderer
         this.globalShadowmapBindGroup;
         this.globalBindGroup;
 
+        this.ParticleSSBOUniformBuffer;
+        this.globalBillboardBindGroup;
+
         this.globalFontBindGroup;
         this.fontBindGroup;
 
         this.presentBindGroup;
 
         this.fontGenerator = new FontGenerator('res/font/Droidsansmono_ttf.csv');
-        this.fontGenerator.init();
+        //this.fontGenerator.init();
         this.resourceCache = new ResourceCache(device);
+        this.particleSystem = new ParticleSystem();
     }
 
     async Initialize()
@@ -143,6 +149,8 @@ export default class Renderer
         const fontFragmentShader = await (await fetch("res/shaders/fontFragment.wgsl")).text();
         const presentVertexShader = await (await fetch("res/shaders/presentVertex.wgsl")).text();
         const presentFragmentShader = await (await fetch("res/shaders/presentFragment.wgsl")).text();
+        const billboardVertexShader = await (await fetch("res/shaders/billboardVertex.wgsl")).text();
+        const billboardFragmentShader = await (await fetch("res/shaders/billboardFragment.wgsl")).text();
 
         const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
     
@@ -315,6 +323,43 @@ export default class Renderer
                 format: this.depthAttachment.format,
             },
         });
+
+        this.billboardPipeline = device.createRenderPipeline({
+            label: "Billboard pipeline",
+            layout: "auto",
+            vertex: {
+                module: device.createShaderModule({
+                    code: billboardVertexShader
+                }),
+                entryPoint: "vertexMain",
+                buffers: [vertexBufferLayout]
+            },
+            fragment: {
+                module: device.createShaderModule({
+                    code: billboardFragmentShader
+                }),
+                entryPoint: "fragmentMain",
+                targets: [{
+                    format: 'rgba16float'
+                },
+                {
+                    format: 'rgba8unorm'
+                },
+                {
+                    format: 'rgba8unorm'
+                }]
+            },
+            primitive: {
+                topology: 'triangle-list',
+                cullMode: 'back',
+                frontFace: 'cw'
+            },
+            depthStencil: {
+                depthWriteEnabled: true,
+                depthCompare: 'less',
+                format: this.depthAttachment.format,
+            },
+        });
     
         this.fontPipeline = device.createRenderPipeline({
             label: "Font pipeline",
@@ -402,7 +447,12 @@ export default class Renderer
             size: 64 * this.MAX_TRANSFORMS, //matrix * MAX_TRANSFORMS
             usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         });
-    
+
+        this.ParticleSSBOUniformBuffer = device.createBuffer({
+            label: "Particle buffer",
+            size: 4 * this.particleSystem.PARTICLE_SIZE * this.particleSystem.maxParticles,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
 
         this.globalBindGroup = device.createBindGroup({
             label: "Global",
@@ -437,6 +487,19 @@ export default class Renderer
             {
                 binding: 1,
                 resource: { buffer: this.SSBOUniformBuffer }
+            }],
+        });
+
+        this.globalBillboardBindGroup = device.createBindGroup({
+            label: "Global",
+            layout: this.billboardPipeline.getBindGroupLayout(0),
+            entries: [{
+                binding: 0,
+                resource: { buffer: this.cameraUniformBuffer }
+            },
+            {
+                binding: 1,
+                resource: { buffer: this.ParticleSSBOUniformBuffer }
             }],
         });
 
@@ -600,6 +663,15 @@ export default class Renderer
             {
                 //console.log('Update', (updateEnd - updateStart));
                 device.queue.writeBuffer(this.SSBOUniformBuffer, updateStart * 64, this.transforms, updateStart * 16, (updateEnd - updateStart) * 16);
+            }
+
+            if(this.particleSystem.particleCount > 0)
+            {
+                device.queue.writeBuffer(this.ParticleSSBOUniformBuffer, 0, this.particleSystem.particleGPUBuffer, 0, this.particleSystem.particleCount * this.particleSystem.PARTICLE_SIZE);
+
+                geometryPass.setBindGroup(0, this.globalBillboardBindGroup);
+                geometryPass.setPipeline(this.billboardPipeline);
+                geometryPass.drawIndexed(6, this.particleSystem.particleCount, 0, 0, 0);
             }
 
             geometryPass.setBindGroup(0, this.globalFontBindGroup);
