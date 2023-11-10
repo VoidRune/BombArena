@@ -124,6 +124,7 @@ export default class Renderer
 
         this.ParticleSSBOUniformBuffer;
         this.globalBillboardBindGroup;
+        this.BillboardBindGroup;
 
         this.globalFontBindGroup;
         this.fontBindGroup;
@@ -343,7 +344,19 @@ export default class Renderer
                     format: 'rgba16float'
                 },
                 {
-                    format: 'rgba8unorm'
+                    format: 'rgba8unorm',
+                    blend: {
+                        color: {
+                          srcFactor: 'src-alpha',
+                          dstFactor: 'one',
+                          operation: 'add',
+                        },
+                        alpha: {
+                          srcFactor: 'zero',
+                          dstFactor: 'one',
+                          operation: 'add',
+                        },
+                    },
                 },
                 {
                     format: 'rgba8unorm'
@@ -381,7 +394,19 @@ export default class Renderer
                     format: 'rgba16float'
                 },
                 {
-                    format: 'rgba8unorm'
+                    format: 'rgba8unorm',
+                    blend: {
+                        color: {
+                          srcFactor: 'src-alpha',
+                          dstFactor: 'one',
+                          operation: 'add',
+                        },
+                        alpha: {
+                          srcFactor: 'src-alpha',
+                          dstFactor: 'one-minus-src-alpha',
+                          operation: 'add',
+                        },
+                    },
                 },
                 {
                     format: 'rgba8unorm'
@@ -397,14 +422,6 @@ export default class Renderer
                 depthCompare: 'less',
                 format: this.depthAttachment.format,
             },
-            colorStates: [{
-                format: 'rgba8unorm',
-                colorBlend: {
-                    srcFactor: 'src-alpha',
-                    dstFactor: 'one-minus-src-alpha',
-                    operation: 'add'
-                }
-            }],
         });
 
         this.presentPipeline = device.createRenderPipeline({
@@ -500,6 +517,45 @@ export default class Renderer
             {
                 binding: 1,
                 resource: { buffer: this.ParticleSSBOUniformBuffer }
+            }],
+        });
+
+        let effectImageData = await loadTexture('/res/Textures/eye.jpg');
+
+        let effectImage = device.createTexture({
+            size: {
+                width: effectImageData.width,
+                height: effectImageData.height,
+                depthOrArrayLayers: 1,
+            },
+            format: 'r8unorm',
+            usage:
+                GPUTextureUsage.TEXTURE_BINDING |
+                GPUTextureUsage.COPY_DST |
+                GPUTextureUsage.RENDER_ATTACHMENT
+        });
+    
+        device.queue.copyExternalImageToTexture(
+            { source: effectImageData },
+            { texture: effectImage },
+            {
+                width: effectImageData.width,
+                height: effectImageData.height,
+                depthOrArrayLayers: 1
+            }
+        );
+
+        this.BillboardBindGroup = device.createBindGroup({
+            label: "Billboard",
+            layout: this.billboardPipeline.getBindGroupLayout(1),
+            entries: [
+            {
+                binding: 0,
+                resource: linearSampler
+            },
+            {
+                binding: 1,
+                resource: effectImage.createView()
             }],
         });
 
@@ -670,6 +726,7 @@ export default class Renderer
                 device.queue.writeBuffer(this.ParticleSSBOUniformBuffer, 0, this.particleSystem.particleGPUBuffer, 0, this.particleSystem.particleCount * this.particleSystem.PARTICLE_SIZE);
 
                 geometryPass.setBindGroup(0, this.globalBillboardBindGroup);
+                geometryPass.setBindGroup(1, this.BillboardBindGroup);
                 geometryPass.setPipeline(this.billboardPipeline);
                 geometryPass.drawIndexed(6, this.particleSystem.particleCount, 0, 0, 0);
             }

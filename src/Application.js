@@ -130,7 +130,7 @@ function explodeBomb(coords, radius) {
 
 
 var lastTime = performance.now() / 1000;
-
+var particleTimer = 0;
 export function RenderFrame()
 {
     let time = performance.now() / 1000;
@@ -154,17 +154,35 @@ export function RenderFrame()
     
     if (input.keys['KeyE']) 
     {
-        let particle = new Particle();
-        particle.position = [playerPos[0], playerPos[1] + 1.0, playerPos[2]];
-        particle.velocity = [(Math.random() - 0.5) * 2.0, (Math.random() - 0.5) * 2.0, (Math.random() - 0.5) * 2.0];
-        particle.radiusStart = Math.random() * 0.3 + 0.1;
-        particle.colorStart = [Math.random() * 0.5 + 0.5, 0.2, 0.2];
-        particle.colorEnd = [0.2, 0.2, Math.random() * 0.5 + 0.5];
-        particle.radiusEnd = 0.0;
-        particle.rotationStart = Math.random();
-        particle.rotationEnd = 1.0 + Math.random();
-        particle.lifetime = Math.random() * 1.5 + 0.5;
-        particleSystem.emit(time, particle);
+        //for(let i = 0; i < 10; i++)
+        //{
+        //    let particle = new Particle();
+        //    particle.position = [playerPos[0], playerPos[1] + 1.0, playerPos[2]];
+        //    particle.velocity = [(Math.random() - 0.5) * 2.0, (Math.random() - 0.5) * 2.0, (Math.random() - 0.5) * 2.0];
+        //    particle.radiusStart = Math.random() * 0.3 + 0.1;
+        //    particle.colorStart = [Math.random() * 0.5 + 0.5, 0.2, 0.2];
+        //    particle.colorEnd = [0.2, 0.2, Math.random() * 0.5 + 0.5];
+        //    particle.radiusEnd = 0.0;
+        //    particle.rotationStart = Math.random();
+        //    particle.rotationEnd = 1.0 + Math.random();
+        //    particle.lifetime = Math.random() * 1.5 + 0.5;
+        //    particleSystem.emit(time, particle);
+        //}
+        if(particleTimer <= time)
+        {
+            let particle = new Particle();
+            particle.position = [playerPos[0], 4, playerPos[2]];
+            particle.velocity = [0.0, 1.0, 0.0];
+            particle.radiusStart = 3.0;
+            particle.radiusEnd = 4.0;
+            particle.colorStart = [Math.random(), Math.random(), Math.random()];
+            particle.colorEnd = [Math.random(), Math.random(), Math.random()];
+            particle.rotationStart = Math.random() * 6.283;
+            particle.rotationEnd = particle.rotationStart;
+            particle.lifetime = 0.5;
+            particleSystem.emit(time, particle);
+            particleTimer = time + 1;
+        }
 
         //arena.setTile(Math.floor(playerPos[0]), Math.floor(playerPos[2]), '#');
         //arena.updateArena(); 
