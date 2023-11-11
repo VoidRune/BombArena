@@ -154,50 +154,106 @@ export function RenderFrame()
     
     if (input.keys['KeyE']) 
     {
-        for(let i = 0; i < 2; i++)
-        {
-            let particle = new Particle();
-            particle.position = [playerPos[0], 4, playerPos[2]];
-            particle.velocity = [(Math.random() - 0.5) * 4.0, (Math.random() - 0.5) * 2.0 + 4, (Math.random() - 0.5) * 4.0];
-            particle.colorStart = [1, 0.631, 0];
-            particle.colorEnd = [1, 0.631, 0];
-            particle.radiusStart = Math.random() * 0.3 + 0.1;
-            particle.radiusEnd = 0.0;
-            particle.rotationStart = Math.random() * 6.283;
-            particle.rotationEnd = Math.random() * 6.283;
-            particle.gravityStrength = 1.0;
-            particle.texCoord = [7 / 8, 1 / 8, 15 / 16, 3 / 16];
-            particle.lifetime = Math.random() * 1.5 + 0.5;
-            particleSystem.emit(time, particle);
-
-            particle = new Particle();
-            particle.position = [playerPos[0], 4, playerPos[2]];
-            particle.velocity = [(Math.random() - 0.5) * 4.0, (Math.random() - 0.5) * 2.0 + 4, (Math.random() - 0.5) * 4.0];
-            particle.colorStart = [1, 0.631, 0];
-            particle.colorEnd = [1, 0.631, 0];
-            particle.radiusStart = Math.random() * 0.3 + 0.1;
-            particle.radiusEnd = 0.0;
-            particle.rotationStart = Math.random() * 6.283;
-            particle.rotationEnd = Math.random() * 6.283;
-            particle.gravityStrength = 1.0;
-            particle.texCoord = [7 / 8, 3 / 16, 15 / 16, 4 / 16];
-            particle.lifetime = Math.random() * 1.5 + 0.5;
-            particleSystem.emit(time, particle);
-        }
+        //for(let i = 0; i < 2; i++)
+        //{
+        //    let particle = new Particle();
+        //    particle.position = [playerPos[0], 4, playerPos[2]];
+        //    particle.velocity = [(Math.random() - 0.5) * 4.0, (Math.random() - 0.5) * 2.0 + 4, (Math.random() - 0.5) * 4.0];
+        //    particle.colorStart = [1, 0.631, 0];
+        //    particle.colorEnd = [1, 0.631, 0];
+        //    particle.radiusStart = Math.random() * 0.3 + 0.1;
+        //    particle.radiusEnd = 0.0;
+        //    particle.rotationStart = Math.random() * 6.283;
+        //    particle.rotationEnd = Math.random() * 6.283;
+        //    particle.gravityStrength = 1.0;
+        //    particle.texCoord = [7 / 8, 1 / 8, 15 / 16, 3 / 16];
+        //    particle.lifetime = Math.random() * 1.5 + 0.5;
+        //    particleSystem.emit(time, particle);
+//
+        //    particle = new Particle();
+        //    particle.position = [playerPos[0], 4, playerPos[2]];
+        //    particle.velocity = [(Math.random() - 0.5) * 4.0, (Math.random() - 0.5) * 2.0 + 4, (Math.random() - 0.5) * 4.0];
+        //    particle.colorStart = [1, 0.631, 0];
+        //    particle.colorEnd = [1, 0.631, 0];
+        //    particle.radiusStart = Math.random() * 0.3 + 0.1;
+        //    particle.radiusEnd = 0.0;
+        //    particle.rotationStart = Math.random() * 6.283;
+        //    particle.rotationEnd = Math.random() * 6.283;
+        //    particle.gravityStrength = 1.0;
+        //    particle.texCoord = [7 / 8, 3 / 16, 15 / 16, 4 / 16];
+        //    particle.lifetime = Math.random() * 1.5 + 0.5;
+        //    particleSystem.emit(time, particle);
+        //}
         if(particleTimer <= time)
         {
+            // Debree
+            for(let i = 0; i < 10; i++)
+            {
+                let particle = new Particle();
+                particle.position = [playerPos[0], 4, playerPos[2]];
+                particle.velocity = [(Math.random() - 0.5) * 4.0, (Math.random() - 0.5) * 2.0 + 4, (Math.random() - 0.5) * 4.0];
+                particle.colorStart = [0.72, 0.651, 0.271];
+                particle.colorEnd = [0.659, 0.565, 0.031];
+                particle.radiusStart = Math.random() * 0.3 + 0.1;
+                particle.radiusEnd = 0.0;
+                particle.rotationStart = Math.random() * 6.283;
+                particle.rotationEnd = Math.random() * 6.283;
+                particle.gravityStrength = 1.0;
+                let xPar = Math.floor(Math.random() * 2);
+                let yPar = Math.floor(Math.random() * 3);
+                particle.texCoord = [(14 + xPar) / 16, (2 + yPar) / 16, (15 + xPar) / 16, (3 + yPar) / 16];
+                particle.lifetime = Math.random() * 1.5 + 0.5;
+                particleSystem.emit(time, particle);
+            }
+            // Dust
+            for(let i = 0; i < 2; i++)
+            {
+                let particle = new Particle();
+                particle.position = [playerPos[0], 4, playerPos[2]];
+                particle.velocity = [(Math.random() - 0.5) * 2.0, (Math.random() - 0.5) * 2.0, (Math.random() - 0.5) * 2.0];
+                particle.colorStart = [1, 0.631, 0];
+                particle.colorEnd = [1, 0.631, 0];
+                particle.radiusStart = 1.0;
+                particle.radiusEnd = 3.0;
+                particle.rotationStart = Math.random();
+                particle.rotationEnd = Math.random();
+                particle.gravityStrength = 0.0;
+                let xPar = Math.floor(Math.random() * 4);
+                particle.texCoord = [xPar / 8, 0 / 8, (xPar + 1) / 8, 1 / 8];
+                particle.lifetime = Math.random() * 0.5 + 0.8;
+                particleSystem.emit(time, particle);
+            }
+            // Explosion
+            for(let i = 0; i < 2; i++)
+            {
+                let particle = new Particle();
+                particle.position = [playerPos[0], 4, playerPos[2]];
+                particle.velocity = [0, 0, 0];
+                particle.colorStart = [1, 1, 0];
+                particle.colorEnd = [1, 0, 0];
+                particle.radiusStart = 1.5;
+                particle.radiusEnd = 4.0;
+                particle.rotationStart = Math.random();
+                particle.rotationEnd = Math.random();
+                particle.gravityStrength = 0.2;
+                let xPar = Math.floor(Math.random() * 4);
+                particle.texCoord = [(xPar + 4) / 8, 0 / 8, (xPar + 5) / 8, 1 / 8];
+                particle.lifetime = Math.random() * 0.3 + 0.1;
+                particleSystem.emit(time, particle);
+            }
+            // Halo
             let particle = new Particle();
             particle.position = [playerPos[0], 4, playerPos[2]];
             particle.velocity = [0.0, 1.0, 0.0];
-            particle.radiusStart = 3.0;
-            particle.radiusEnd = 10.0;
+            particle.radiusStart = 0.5;
+            particle.radiusEnd = 4.0;
             particle.gravityStrength = 0.0;
-            particle.colorStart = [Math.random(), Math.random(), Math.random()];
-            particle.colorEnd = [Math.random(), Math.random(), Math.random()];
-            //particle.rotationStart = Math.random() * 6.283;
-            //particle.rotationEnd = particle.rotationStart;
+            particle.colorStart = [1, 0.631, 0];
+            particle.colorEnd = [1, 0.631, 0];
+            particle.rotationStart = Math.random() * 6.283;
+            particle.rotationEnd = particle.rotationStart;
             particle.texCoord = [6 / 8, 1 / 8, 7 / 8, 2 / 8];
-            particle.lifetime = 0.5;
+            particle.lifetime = 0.15;
             particleSystem.emit(time, particle);
             particleTimer = time + 0.5;
         }
