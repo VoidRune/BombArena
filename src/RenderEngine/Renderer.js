@@ -340,7 +340,8 @@ export default class Renderer
                     code: billboardFragmentShader
                 }),
                 entryPoint: "fragmentMain",
-                targets: [{
+                targets: [
+                {
                     format: 'rgba16float'
                 },
                 {
@@ -368,7 +369,7 @@ export default class Renderer
                 frontFace: 'cw'
             },
             depthStencil: {
-                depthWriteEnabled: true,
+                depthWriteEnabled: false,
                 depthCompare: 'less',
                 format: this.depthAttachment.format,
             },
