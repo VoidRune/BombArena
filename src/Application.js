@@ -154,20 +154,21 @@ export function RenderFrame()
     
     if (input.keys['KeyE']) 
     {
-        //for(let i = 0; i < 10; i++)
-        //{
-        //    let particle = new Particle();
-        //    particle.position = [playerPos[0], playerPos[1] + 1.0, playerPos[2]];
-        //    particle.velocity = [(Math.random() - 0.5) * 2.0, (Math.random() - 0.5) * 2.0, (Math.random() - 0.5) * 2.0];
-        //    particle.radiusStart = Math.random() * 0.3 + 0.1;
-        //    particle.colorStart = [Math.random() * 0.5 + 0.5, 0.2, 0.2];
-        //    particle.colorEnd = [0.2, 0.2, Math.random() * 0.5 + 0.5];
-        //    particle.radiusEnd = 0.0;
-        //    particle.rotationStart = Math.random();
-        //    particle.rotationEnd = 1.0 + Math.random();
-        //    particle.lifetime = Math.random() * 1.5 + 0.5;
-        //    particleSystem.emit(time, particle);
-        //}
+        for(let i = 0; i < 1; i++)
+        {
+            let particle = new Particle();
+            particle.position = [playerPos[0], 4, playerPos[2]];
+            particle.velocity = [(Math.random() - 0.5) * 2.0, (Math.random() - 0.5) * 2.0 + 4, (Math.random() - 0.5) * 2.0];
+            particle.colorStart = [1, 0.631, 0];
+            particle.colorEnd = [1, 0.631, 0];
+            particle.radiusStart = Math.random() * 0.3 + 0.1;
+            particle.radiusEnd = 0.0;
+            particle.rotationStart = Math.random() * 6.283;
+            particle.rotationEnd = Math.random() * 6.283;
+            //particle.gravityStrength = 1.0;
+            particle.lifetime = Math.random() * 1.5 + 0.5;
+            particleSystem.emit(time, particle);
+        }
         if(particleTimer <= time)
         {
             let particle = new Particle();
@@ -175,6 +176,7 @@ export function RenderFrame()
             particle.velocity = [0.0, 1.0, 0.0];
             particle.radiusStart = 3.0;
             particle.radiusEnd = 4.0;
+            particle.gravityStrength = 0.0;
             particle.colorStart = [Math.random(), Math.random(), Math.random()];
             particle.colorEnd = [Math.random(), Math.random(), Math.random()];
             particle.rotationStart = Math.random() * 6.283;
@@ -206,7 +208,7 @@ export function RenderFrame()
 
     renderData.instanceBatches = batches;
 
-    particleSystem.update(time, dt);
+    particleSystem.update(time, dt, cam.position);
     renderer.Render(renderData);
 
     requestAnimationFrame(RenderFrame);

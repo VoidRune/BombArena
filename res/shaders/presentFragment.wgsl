@@ -24,10 +24,10 @@ struct CameraData {
     var color = textureSample(colorAttachment, mySampler, input.uv);
     var normal = textureSample(normalAttachment, mySampler, input.uv);
     var reflectivity = 0.0;
-	if(normal.y == 1.0)
-	{
-		reflectivity = 0.2;
-	}
+	//if(normal.y == 1.0)
+	//{
+	//	reflectivity = 0.2;
+	//}
 
 	//return color;
 	

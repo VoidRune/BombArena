@@ -508,7 +508,7 @@ export default class Renderer
         });
 
         this.globalBillboardBindGroup = device.createBindGroup({
-            label: "Global",
+            label: "Global billboard",
             layout: this.billboardPipeline.getBindGroupLayout(0),
             entries: [{
                 binding: 0,
@@ -520,7 +520,7 @@ export default class Renderer
             }],
         });
 
-        let effectImageData = await loadTexture('/res/Textures/eye.jpg');
+        let effectImageData = await loadTexture('/res/effects/10.png');
 
         let effectImage = device.createTexture({
             size: {
