@@ -103,10 +103,12 @@ export default class Renderer
         this.normalAttachment;
         this.depthAttachment;
 
+        this.overlayAttachment;
+
         this.shadowmapPipeline;
         this.pipeline;
         this.billboardPipeline;
-        this.presentPipeline;
+        this.finalCompositionPipeline;
 
         this.quadVertices;
         this.quadIndices;
@@ -129,7 +131,7 @@ export default class Renderer
         this.globalFontBindGroup;
         this.fontBindGroup;
 
-        this.presentBindGroup;
+        this.finalCompositionBindGroup;
 
         this.fontGenerator = new FontGenerator('res/font/Droidsansmono_ttf.csv');
         //this.fontGenerator.init();
@@ -148,10 +150,10 @@ export default class Renderer
         const fragmentShader = await (await fetch("res/shaders/fragment.wgsl")).text();
         const fontVertexShader = await (await fetch("res/shaders/fontVertex.wgsl")).text();
         const fontFragmentShader = await (await fetch("res/shaders/fontFragment.wgsl")).text();
-        const presentVertexShader = await (await fetch("res/shaders/presentVertex.wgsl")).text();
-        const presentFragmentShader = await (await fetch("res/shaders/presentFragment.wgsl")).text();
         const billboardVertexShader = await (await fetch("res/shaders/billboardVertex.wgsl")).text();
         const billboardFragmentShader = await (await fetch("res/shaders/billboardFragment.wgsl")).text();
+        const finalCompositionVertexShader = await (await fetch("res/shaders/presentVertex.wgsl")).text();
+        const finalCompositionFragmentShader = await (await fetch("res/shaders/presentFragment.wgsl")).text();
 
         const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
     
@@ -183,6 +185,12 @@ export default class Renderer
             size: [canvas.width, canvas.height],
             format: 'depth24plus',
             usage: GPUTextureUsage.RENDER_ATTACHMENT,
+        });
+
+        this.overlayAttachment = device.createTexture({
+            size: [canvas.width, canvas.height],
+            format: 'rgba8unorm',
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
         });
     
         const vertexBufferLayout = {
@@ -333,18 +341,14 @@ export default class Renderer
                     code: billboardVertexShader
                 }),
                 entryPoint: "vertexMain",
-                buffers: [vertexBufferLayout]
+                buffers: []
             },
             fragment: {
                 module: device.createShaderModule({
                     code: billboardFragmentShader
                 }),
                 entryPoint: "fragmentMain",
-                targets: [
-                {
-                    format: 'rgba16float'
-                },
-                {
+                targets: [{
                     format: 'rgba8unorm',
                     blend: {
                         color: {
@@ -358,21 +362,13 @@ export default class Renderer
                           operation: 'add',
                         },
                     },
-                },
-                {
-                    format: 'rgba8unorm'
                 }]
             },
             primitive: {
                 topology: 'triangle-list',
                 cullMode: 'back',
                 frontFace: 'cw'
-            },
-            depthStencil: {
-                depthWriteEnabled: false,
-                depthCompare: 'less',
-                format: this.depthAttachment.format,
-            },
+            }
         });
     
         this.fontPipeline = device.createRenderPipeline({
@@ -390,11 +386,7 @@ export default class Renderer
                     code: fontFragmentShader
                 }),
                 entryPoint: "fragmentMain",
-                targets: [
-                {
-                    format: 'rgba16float'
-                },
-                {
+                targets: [{
                     format: 'rgba8unorm',
                     blend: {
                         color: {
@@ -408,9 +400,6 @@ export default class Renderer
                           operation: 'add',
                         },
                     },
-                },
-                {
-                    format: 'rgba8unorm'
                 }]
             },
             primitive: {
@@ -418,26 +407,21 @@ export default class Renderer
                 cullMode: 'back',
                 frontFace: 'cw'
             },
-            depthStencil: {
-                depthWriteEnabled: true,
-                depthCompare: 'less',
-                format: this.depthAttachment.format,
-            },
         });
 
-        this.presentPipeline = device.createRenderPipeline({
+        this.finalCompositionPipeline = device.createRenderPipeline({
             label: "Present pipeline",
             layout: "auto",
             vertex: {
                 module: device.createShaderModule({
-                    code: presentVertexShader
+                    code: finalCompositionVertexShader
                 }),
                 entryPoint: "vertexMain",
                 buffers: [vertexBufferLayout]
             },
             fragment: {
                 module: device.createShaderModule({
-                    code: presentFragmentShader
+                    code: finalCompositionFragmentShader
                 }),
                 entryPoint: "fragmentMain",
                 targets: [{
@@ -585,16 +569,16 @@ export default class Renderer
 
         this.globalPresentBindGroup = device.createBindGroup({
             label: "Global Present",
-            layout: this.presentPipeline.getBindGroupLayout(0),
+            layout: this.finalCompositionPipeline.getBindGroupLayout(0),
             entries: [{
                 binding: 0,
                 resource: { buffer: this.cameraUniformBuffer }
             }],
         });
 
-        this.presentBindGroup = device.createBindGroup({
+        this.finalCompositionBindGroup = device.createBindGroup({
             label: "Present",
-            layout: this.presentPipeline.getBindGroupLayout(1),
+            layout: this.finalCompositionPipeline.getBindGroupLayout(1),
             entries: [
             {
                 binding: 0,
@@ -611,6 +595,10 @@ export default class Renderer
             {
                 binding: 3,
                 resource: this.normalAttachment.createView()
+            },
+            {
+                binding: 4,
+                resource: this.overlayAttachment.createView()
             }],
         });
     }
@@ -721,29 +709,42 @@ export default class Renderer
                 //console.log('Update', (updateEnd - updateStart));
                 device.queue.writeBuffer(this.SSBOUniformBuffer, updateStart * 64, this.transforms, updateStart * 16, (updateEnd - updateStart) * 16);
             }
-
-            if(this.particleSystem.particleCount > 0)
-            {
-                device.queue.writeBuffer(this.ParticleSSBOUniformBuffer, 0, this.particleSystem.particleGPUBuffer, 0, this.particleSystem.particleCount * this.particleSystem.PARTICLE_SIZE);
-
-                geometryPass.setBindGroup(0, this.globalBillboardBindGroup);
-                geometryPass.setBindGroup(1, this.BillboardBindGroup);
-                geometryPass.setPipeline(this.billboardPipeline);
-                geometryPass.drawIndexed(6, this.particleSystem.particleCount, 0, 0, 0);
-            }
-
-            geometryPass.setBindGroup(0, this.globalFontBindGroup);
-            geometryPass.setPipeline(this.fontPipeline);
-            geometryPass.setBindGroup(1, this.fontBindGroup);
-            geometryPass.setVertexBuffer(0, this.quadVertexBuffer);
-            geometryPass.setIndexBuffer(this.quadIndexBuffer, "uint32");
-            geometryPass.drawIndexed(this.quadIndices.length, 1, 0, 0, 0);
         
             geometryPass.end();
         }
 
         {
-            const presentPass = encoder.beginRenderPass({
+            const overlayPass = encoder.beginRenderPass({
+                colorAttachments: [{
+                view: this.overlayAttachment.createView(),
+                clearValue: { r: 0, g: 0, b: 0, a: 0 },
+                loadOp: "clear",
+                storeOp: "store",
+                }],
+            });
+
+            if(this.particleSystem.particleCount > 0)
+            {
+                device.queue.writeBuffer(this.ParticleSSBOUniformBuffer, 0, this.particleSystem.particleGPUBuffer, 0, this.particleSystem.particleCount * this.particleSystem.PARTICLE_SIZE);
+
+                overlayPass.setBindGroup(0, this.globalBillboardBindGroup);
+                overlayPass.setBindGroup(1, this.BillboardBindGroup);
+                overlayPass.setPipeline(this.billboardPipeline);
+                overlayPass.draw(6, this.particleSystem.particleCount, 0, 0, 0);
+            }
+
+            overlayPass.setBindGroup(0, this.globalFontBindGroup);
+            overlayPass.setPipeline(this.fontPipeline);
+            overlayPass.setBindGroup(1, this.fontBindGroup);
+            overlayPass.setVertexBuffer(0, this.quadVertexBuffer);
+            overlayPass.setIndexBuffer(this.quadIndexBuffer, "uint32");
+            overlayPass.drawIndexed(this.quadIndices.length, 1, 0, 0, 0);
+
+            overlayPass.end();
+        }
+
+        {
+            const finalCompositionPass = encoder.beginRenderPass({
                 colorAttachments: [{
                 view: this.context.getCurrentTexture().createView(),
                 clearValue: { r: 0.1, g: 0.4, b: 0.8, a: 1 },
@@ -753,13 +754,13 @@ export default class Renderer
             });
 
             
-            presentPass.setBindGroup(0, this.globalPresentBindGroup);
-            presentPass.setBindGroup(1, this.presentBindGroup);
-            presentPass.setPipeline(this.presentPipeline);
-            presentPass.setVertexBuffer(0, this.quadVertexBuffer);
-            presentPass.draw(6, 1, 0, 0, 0);
+            finalCompositionPass.setBindGroup(0, this.globalPresentBindGroup);
+            finalCompositionPass.setBindGroup(1, this.finalCompositionBindGroup);
+            finalCompositionPass.setPipeline(this.finalCompositionPipeline);
+            finalCompositionPass.setVertexBuffer(0, this.quadVertexBuffer);
+            finalCompositionPass.draw(6, 1, 0, 0, 0);
 
-            presentPass.end();
+            finalCompositionPass.end();
         }
 
         device.queue.submit([encoder.finish()]);

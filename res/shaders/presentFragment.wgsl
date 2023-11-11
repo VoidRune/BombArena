@@ -15,6 +15,7 @@ struct CameraData {
 @group(1) @binding(1) var positionAttachment: texture_2d<f32>;
 @group(1) @binding(2) var colorAttachment: texture_2d<f32>;
 @group(1) @binding(3) var normalAttachment: texture_2d<f32>;
+@group(1) @binding(4) var overlayAttachment: texture_2d<f32>;
 
 @fragment
 @diagnostic(off,derivative_uniformity) fn fragmentMain(input: FragmentInput) -> @location(0) vec4f 
@@ -23,6 +24,8 @@ struct CameraData {
     var position = textureSample(positionAttachment, mySampler, input.uv);
     var color = textureSample(colorAttachment, mySampler, input.uv);
     var normal = textureSample(normalAttachment, mySampler, input.uv);
+	var overlay = textureSample(overlayAttachment, mySampler, input.uv);
+	var outColor = color + overlay;
     var reflectivity = 0.0;
 	if(normal.y == 1.0)
 	{
@@ -33,7 +36,7 @@ struct CameraData {
 	
     if (reflectivity < 0.005)
     {
-		return color;
+		return outColor;
 	}
 
     var rayOrigin = vec3f(cam.invView[3][0], cam.invView[3][1], cam.invView[3][2]);
@@ -66,7 +69,7 @@ struct CameraData {
 
 		if(currUv.x < 0 || currUv.x > 1 || currUv.y < 0 || currUv.y > 1)
 		{
-			return color;
+			return outColor;
 		}
 
 		var pos = textureSample(positionAttachment, mySampler, currUv);
@@ -83,10 +86,10 @@ struct CameraData {
 		if(lb >= la && lb - la <= 0.5)
 		{
 			var reflection = textureSample(colorAttachment, mySampler, currUv);
-			return mix(color, reflection, reflectivity);
+			return mix(outColor, reflection, reflectivity);
 		}
 	}
 
-    return color;
+    return outColor;
 	
 }
