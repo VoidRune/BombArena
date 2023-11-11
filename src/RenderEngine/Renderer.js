@@ -258,7 +258,7 @@ export default class Renderer
                 },
             ],
         });
-
+        /*
         const materialBindGrouplayout = device.createBindGroupLayout({
             entries: [
                 {
@@ -357,8 +357,8 @@ export default class Renderer
                           operation: 'add',
                         },
                         alpha: {
-                          srcFactor: 'zero',
-                          dstFactor: 'one',
+                          srcFactor: 'src-alpha',
+                          dstFactor: 'one-minus-src-alpha',
                           operation: 'add',
                         },
                     },
@@ -505,7 +505,7 @@ export default class Renderer
             }],
         });
 
-        let effectImageData = await loadTexture('/res/effects/10.png');
+        let effectImageData = await loadTexture('/res/effects/effectAtlas.png');
 
         let effectImage = device.createTexture({
             size: {

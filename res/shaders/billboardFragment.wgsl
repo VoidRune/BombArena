@@ -1,6 +1,6 @@
 
 struct FragmentInput {
-    @location(0) offset: vec2f,
+    @location(0) texCoord: vec2f,
     @location(1) color: vec3f,
 };
 
@@ -15,11 +15,10 @@ struct FragmentOutput {
 fn fragmentMain(input: FragmentInput) -> FragmentOutput
 {
 
-    var uv: vec2f = (input.offset + 1.0) * 0.5;
+    var uv: vec2f = input.texCoord;
     var sampledColor: f32 = textureSample(texture, textureSampler, uv).r;
 
     var output: FragmentOutput;
     output.color = vec4f(input.color.rgb, sampledColor);
-
     return output;
 }

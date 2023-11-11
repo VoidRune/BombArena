@@ -17,7 +17,7 @@ export function createTexture(device, imageBitmap, mipsEnabled = false)
         });
 
     device.queue.copyExternalImageToTexture(
-        { source: imageBitmap },
+        { source: imageBitmap, flipY: true },
         { texture: tex, mipLevel: 0 },
         [imageBitmap.width, imageBitmap.height]
     );

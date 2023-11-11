@@ -10,7 +10,8 @@ export class Particle
                 colorStart = [1, 1, 1, 1],
                 colorEnd = [0, 0, 0, 0],
                 radiusStart = 0.5, 
-                radiusEnd = 0.5)
+                radiusEnd = 0.5,
+                texCoord = [0, 0, 1, 1])
     {
         this.position = position;
         this.velocity = velocity;
@@ -21,7 +22,8 @@ export class Particle
         this.colorEnd = colorEnd;
         this.radiusStart = radiusStart;
         this.radiusEnd = radiusEnd;
-        
+        this.texCoord = texCoord;
+
         this.lifetime = lifetime;
         this.startTime = 0;
         this.currentLifeTime = 0;
@@ -33,7 +35,7 @@ export default class ParticleSystem
     constructor(maxParticles = 512){
         this.maxParticles = maxParticles;
         this.particles = [];
-        this.PARTICLE_SIZE = (3 + 1 + 3 + 1);
+        this.PARTICLE_SIZE = (3 + 1 + 3 + 1 + 4);
         this.particleGPUBuffer = new Float32Array(this.PARTICLE_SIZE * maxParticles);
         this.particleCount = 0;
     }
@@ -80,6 +82,12 @@ export default class ParticleSystem
             this.particleGPUBuffer[this.PARTICLE_SIZE * i + 6] = (1 - lifeElapsed) * p.colorStart[2] + lifeElapsed * p.colorEnd[2];
             // SCALE
             this.particleGPUBuffer[this.PARTICLE_SIZE * i + 7] = (1 - lifeElapsed) * p.radiusStart + lifeElapsed * p.radiusEnd;
+            // TEXTURE COORD
+            this.particleGPUBuffer[this.PARTICLE_SIZE * i + 8] = p.texCoord[0];
+            this.particleGPUBuffer[this.PARTICLE_SIZE * i + 9] = p.texCoord[1];
+            this.particleGPUBuffer[this.PARTICLE_SIZE * i + 10] = p.texCoord[2];
+            this.particleGPUBuffer[this.PARTICLE_SIZE * i + 11] = p.texCoord[3];
+
             this.particleCount++;
         }
         //this.particles.sort((a, b) => {

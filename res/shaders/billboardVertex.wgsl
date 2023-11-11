@@ -14,6 +14,7 @@ struct Particle
 	rotation: f32,
 	color: vec3f,
 	radius: f32,
+    texCoord: vec4f,
 };
 
 @group(0) @binding(0) var<uniform> cam: CameraData;
@@ -29,19 +30,9 @@ const OFFSETS = array<vec2<f32>, 6>(
     vec2<f32>( 1, 1),
 );
 
-const POSITIONS = array<vec3<f32>, 6>(
-    vec3<f32>(3, 3, 3),
-    vec3<f32>(4, 3, 4),
-    vec3<f32>(1, 9, 2),
-    vec3<f32>(0, 0, 1),
-    vec3<f32>(1, 1, 2),
-    vec3<f32>(2, 2, 3)
-);
-
 struct VertexOutput {
-    @location(0) offset: vec2f,
+    @location(0) texCoord: vec2f,
     @location(1) color: vec3f,
-    @location(2) pos: vec3f,
     @builtin(position) position: vec4f,
 };
 
@@ -55,12 +46,13 @@ fn vertexMain( @builtin(vertex_index) Vid: u32, @builtin(instance_index) Iid: u3
     var c: f32 = cos(p.rotation);
 	var rotation: mat2x2<f32> = mat2x2<f32>(s,c,c,-s);
 
+    var uv: vec2f = (OFFSETS[Vid].yx + 1.0) * 0.5;
     var output: VertexOutput;
-    output.offset = OFFSETS[Vid];
+    output.texCoord.x = p.texCoord.x + (p.texCoord.z - p.texCoord.x) * uv.x;
+    output.texCoord.y = p.texCoord.y + (p.texCoord.w - p.texCoord.y) * uv.y;
     var position = OFFSETS[Vid] * rotation;
 
 	var positionCameraSpace: vec4f = cam.view * vec4f(billboardPosition, 1.0) + billboardRadius * vec4f(position, 0.0, 0.0);
-    output.pos = billboardPosition + billboardRadius * vec3f(position, 0.0);
 	output.position = cam.projection * positionCameraSpace;
     output.color = p.color;
     return output;
