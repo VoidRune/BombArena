@@ -29,6 +29,8 @@ var arenaEnvironmentBatch = new InstancedBatch();
 var batches = [];
 
 let playerPos = [1.5, 0, 1.5];
+let glowEffect1 = new Particle();
+let glowEffect2 = new Particle();
 
 const arena = new Arena();
 
@@ -74,6 +76,14 @@ export async function Init()
     batchTeapot.setMesh(teapot);
     batchTeapot.addInstance([-15, 10, 10]);
     batches.push(batchTeapot);
+
+
+    glowEffect1.lifetime = 99999999;
+    glowEffect1.texCoord = [0 / 8, 1 / 8, 4 / 8, 5 / 8];
+    glowEffect2.lifetime = 99999999;
+    glowEffect2.texCoord = [0 / 8, 1 / 8, 4 / 8, 5 / 8];
+    particleSystem.emit(0, glowEffect1);
+    particleSystem.emit(0, glowEffect2);
 }
 
 
@@ -151,7 +161,16 @@ export function RenderFrame()
     vec3.scale(velocity, velocity, movementSpeed * dt);
     
     arena.collideCircle(playerPos, velocity, 0.4);
-    
+    glowEffect1.position = [playerPos[0], 0.75, playerPos[2]];
+    glowEffect1.radiusStart = 1.5 + Math.sin(time) * 0.5;
+    glowEffect1.radiusEnd = glowEffect1.radiusStart;
+    glowEffect1.rotationStart = time * 0.4;
+    glowEffect1.rotationEnd = glowEffect1.rotationStart;
+    glowEffect2.position = [playerPos[0], 0.75, playerPos[2]];
+    glowEffect2.radiusStart = glowEffect1.radiusStart;
+    glowEffect2.radiusEnd = glowEffect2.radiusStart;
+    glowEffect2.rotationStart = -time * 0.4;
+    glowEffect2.rotationEnd = glowEffect2.rotationStart;
     if (input.keys['KeyE']) 
     {
         //for(let i = 0; i < 2; i++)
@@ -255,7 +274,7 @@ export function RenderFrame()
             particle.texCoord = [6 / 8, 1 / 8, 7 / 8, 2 / 8];
             particle.lifetime = 0.15;
             particleSystem.emit(time, particle);
-            particleTimer = time + 0.5;
+            particleTimer = time + 0.4;
         }
 
         //arena.setTile(Math.floor(playerPos[0]), Math.floor(playerPos[2]), '#');
