@@ -16,8 +16,8 @@ const device = await adapter.requestDevice();
 const canvas = document.querySelector('canvas');
 const context = canvas.getContext("webgpu");
 
-//canvas.width  = window.innerWidth;
-//canvas.height = window.innerHeight;
+canvas.width  = window.innerWidth;
+canvas.height = window.innerHeight;
 
 var renderer = new Renderer(device, canvas, context);
 var particleSystem;
