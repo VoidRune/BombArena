@@ -18,6 +18,7 @@ struct VertexOutput {
     @location(2) uv: vec2f,
     @location(3) shadowPos: vec3f,
     @location(4) lightPos: vec3f,
+    @location(5) camDir: vec3f,
 
     @builtin(position) position: vec4f,
 };
@@ -42,5 +43,6 @@ fn vertexMain(
     posFromLight.z
     );
     output.lightPos = cam.lightPos.xyz;
+    output.camDir = output.pos.xyz - vec3f(cam.invView[3][0], cam.invView[3][1], cam.invView[3][2]);
     return output;
 }

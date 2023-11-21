@@ -12,8 +12,8 @@ struct Particle
 {
     position: vec3f,
 	rotation: f32,
-	color: vec3f,
-	radius: f32,
+	color: vec4f,
+	radius: vec4f,
     texCoord: vec4f,
 };
 
@@ -32,7 +32,7 @@ const OFFSETS = array<vec2<f32>, 6>(
 
 struct VertexOutput {
     @location(0) texCoord: vec2f,
-    @location(1) color: vec3f,
+    @location(1) color: vec4f,
     @builtin(position) position: vec4f,
 };
 
@@ -41,7 +41,7 @@ fn vertexMain( @builtin(vertex_index) Vid: u32, @builtin(instance_index) Iid: u3
 {
     var p = particles[Iid];
     var billboardPosition: vec3f = p.position;
-	var billboardRadius: f32 = p.radius;
+	var billboardRadius: f32 = p.radius.x;
 	var s: f32 = sin(p.rotation);
     var c: f32 = cos(p.rotation);
 	var rotation: mat2x2<f32> = mat2x2<f32>(s,c,c,-s);

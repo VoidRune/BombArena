@@ -4,6 +4,7 @@ struct FragmentInput {
     @location(2) uv: vec2f,
     @location(3) shadowPos: vec3f,
     @location(4) lightPos: vec3f,
+    @location(5) camDir: vec3f,
 };
 
 
@@ -27,7 +28,7 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput
     // Percentage-closer filtering. Sample texels in the region
     // to smooth the result.
     var visibility = 0.0;
-    let oneOverShadowDepthTextureSize = 1.0 / 1024.0;
+    let oneOverShadowDepthTextureSize = 1.0 / 2048.0;
     for (var y = -1; y <= 1; y++) {
         for (var x = -1; x <= 1; x++) {
             let offset = vec2<f32>(vec2(x, y)) * oneOverShadowDepthTextureSize;
@@ -43,10 +44,14 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput
     let lambertFactor = max(dot(normalize(input.lightPos - input.pos.xyz), input.norm), 0.0);
     let lightingFactor = min(ambientFactor + visibility * lambertFactor, 1.0);
 
+    var ambient = textureSample(texture, textureSampler, input.uv) * lightingFactor;
+    var specular = pow(max(dot(reflect(normalize(input.camDir), input.norm), normalize(input.lightPos)), 0.0), 100) * lightingFactor;
+
+    let phong = reflect(-input.lightPos, input.norm);
     //var shadowDepth = textureSample(shadowmapTexture, shadowmapSampler, input.uv);
     var output: FragmentOutput;
     output.pos = input.pos;
-    output.color = textureSample(texture, textureSampler, input.uv) * lightingFactor;
+    output.color = vec4f(ambient + specular);
     output.normal = vec4f(input.norm, 1);
     //if(input.shadowPos.x < 0 || input.shadowPos.x > 1 || input.shadowPos.y < 0 || input.shadowPos.y > 1)
     //{
