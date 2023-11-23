@@ -7,7 +7,7 @@ export default class Camera
         position = [0, 5,-2],
         movementSpeed = 2.5,
 
-        pitch = 0,
+        pitch = -Math.PI/3,
         yaw = 0,
         fov = 70, /* Degrees */ 
         nearPlane = 0.1,
@@ -53,8 +53,8 @@ export default class Camera
 
     update(dt)
     {
-        this.pitch = this.input.dx;
-        this.yaw = this.input.dy;
+        //this.pitch = this.input.dx;
+        //this.yaw = this.input.dy;
 
         const cy = Math.cos(this.yaw);
         const sy = Math.sin(this.yaw);
@@ -67,7 +67,7 @@ export default class Camera
 
         const camForward = [sy * cp, sp, cy * cp];
 
-        const acc = vec3.create();
+        /*const acc = vec3.create();
         if (this.input.keys['KeyW']) { vec3.add(acc, acc, forward); }
         if (this.input.keys['KeyS']) { vec3.sub(acc, acc, forward); }
         if (this.input.keys['KeyD']) { vec3.add(acc, acc, right); }
@@ -80,11 +80,18 @@ export default class Camera
         if (this.input.keys['KeyF']) { mul *= 5; }
 
         vec3.mul(acc, vec3.fromValues(mul, mul, mul), acc)
-        vec3.add(this.position, this.position, acc);
+        vec3.add(this.position, this.position, acc);*/
+
         let target = vec3.create();
         vec3.add(target, this.position, camForward);
 
         mat4.lookAt(this.viewMatrix, this.position, target, upInverted);
         mat4.invert(this.invViewMatrix, this.viewMatrix);
+    }
+
+    updatePosition(newPosition, distance) {
+        distance = (distance/10) + 3
+        const offset = [0, Math.tan(Math.PI/3) * distance, -Math.tan(this.fov/2 * (Math.PI / 180)) * distance * 2]
+        vec3.add(this.position, newPosition, offset)
     }
 }

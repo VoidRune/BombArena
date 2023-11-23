@@ -24,15 +24,21 @@ var particleSystem;
 var input = new Input(canvas);
 var cam = new Camera(canvas, input);
 var renderData = new RenderData();
-var playerBatch = new InstancedBatch();
+var player1Batch = new InstancedBatch();
+let player2Batch = new InstancedBatch()
 var arenaEnvironmentBatch = new InstancedBatch();
 var batches = [];
 
-let playerPos = [1.5, 0, 1.5];
+
 let glowEffect1 = new Particle();
 let glowEffect2 = new Particle();
 
 const arena = new Arena();
+
+let player1Pos = [1.5, 0, 1.5]
+let player2Pos = [arena.arenaData.length - 1.5, 0, arena.arenaData[0].length -1.5]
+console.log(arena.arenaData)
+console.log(player2Pos)
 
 export async function Init()
 {
@@ -65,11 +71,18 @@ export async function Init()
         batches.push(value);
     }
 
+    // Initialize player meshes, textures and positions
     let cylinder = resourceCache.addMesh(await loadMesh('res/meshes/cylinder.obj'));
-    playerBatch.setMesh(cylinder);
-    playerBatch.addInstance([0, 0, 0]);
-    batches.push(playerBatch);
+    player1Batch.setMesh(cylinder);
+    player1Batch.setTexture(0)
+    player1Batch.addInstance([0, 0, 0]);
 
+    player2Batch.setMesh(cylinder);
+    player2Batch.setTexture(1)
+    player2Batch.addInstance([0, 0, 0]);
+
+    batches.push(player1Batch);
+    batches.push(player2Batch)
 
     let teapot = resourceCache.addMesh(await loadMesh('res/meshes/teapot.obj'));
     var batchTeapot = new InstancedBatch();
@@ -78,12 +91,12 @@ export async function Init()
     batches.push(batchTeapot);
 
 
-    glowEffect1.lifetime = 99999999;
+    /*glowEffect1.lifetime = 99999999;
     glowEffect1.texCoord = [0 / 8, 1 / 8, 4 / 8, 5 / 8];
     glowEffect2.lifetime = 99999999;
     glowEffect2.texCoord = [0 / 8, 1 / 8, 4 / 8, 5 / 8];
     particleSystem.emit(0, glowEffect1);
-    particleSystem.emit(0, glowEffect2);
+    particleSystem.emit(0, glowEffect2);*/
 }
 
 
@@ -94,7 +107,7 @@ let gameLoop = setInterval(() => {
     }
 }, 50)
 
-function explodeBomb(coords, radius) {
+function explodeBomb(coords, radius, time) {
     
     let [x, y] = coords;
 
@@ -124,9 +137,12 @@ function explodeBomb(coords, radius) {
             else if (t === 'T') {
                 arena.setTile(newX, newY, '_');
                 dirty = true;
+                explosionEffect([newX + 0.5, -0.5, newY + 0.5], time)
                 break
             }
             else if (t === '_') {
+                explosionEffect([newX + 0.5, -0.5, newY + 0.5], time)
+
                 continue
             }
         }
@@ -139,8 +155,10 @@ function explodeBomb(coords, radius) {
 }
 
 
-var lastTime = performance.now() / 1000;
-var particleTimer = 0;
+let lastTime = performance.now() / 1000;
+let hasBomb1Exploded = false
+let hasBomb2Exploded = false
+
 export function RenderFrame()
 {
     let time = performance.now() / 1000;
@@ -150,141 +168,76 @@ export function RenderFrame()
     cam.update(dt);
 
     let movementSpeed = 2.5;
-    let velocity = [0, 0, 0];
-    if (input.keys['ArrowRight']) { velocity[0] += 1; }
-    if (input.keys['ArrowLeft']) { velocity[0] -= 1; }
-    if (input.keys['ArrowUp']) { velocity[2] += 1; }
-    if (input.keys['ArrowDown']) { velocity[2] -= 1; }
+    let velocity1 = [0, 0, 0];
+    if (input.keys['KeyD']) { velocity1[0] += 1; }
+    if (input.keys['KeyA']) { velocity1[0] -= 1; }
+    if (input.keys['KeyW']) { velocity1[2] += 1; }
+    if (input.keys['KeyS']) { velocity1[2] -= 1; }
 
     
-    vec3.normalize(velocity, velocity);
-    vec3.scale(velocity, velocity, movementSpeed * dt);
+    vec3.normalize(velocity1, velocity1);
+    vec3.scale(velocity1, velocity1, movementSpeed * dt);
     
-    arena.collideCircle(playerPos, velocity, 0.4);
-    glowEffect1.position = [playerPos[0], 0.75, playerPos[2]];
+    arena.collideCircle(player1Pos, velocity1, 0.4);
+
+    let velocity2 = [0, 0, 0];
+    if (input.keys['ArrowRight']) { velocity2[0] += 1; }
+    if (input.keys['ArrowLeft']) { velocity2[0] -= 1; }
+    if (input.keys['ArrowUp']) { velocity2[2] += 1; }
+    if (input.keys['ArrowDown']) { velocity2[2] -= 1; }
+
+    
+    vec3.normalize(velocity2, velocity2);
+    vec3.scale(velocity2, velocity2, movementSpeed * dt);
+    
+    arena.collideCircle(player2Pos, velocity2, 0.4);
+
+    /*
+    glowEffect1.position = [player1Pos[0], 0.75, player1Pos[2]];
     glowEffect1.radiusStart = 1.5 + Math.sin(time) * 0.5;
     glowEffect1.radiusEnd = glowEffect1.radiusStart;
     glowEffect1.rotationStart = time * 0.4;
     glowEffect1.rotationEnd = glowEffect1.rotationStart;
-    glowEffect2.position = [playerPos[0], 0.75, playerPos[2]];
+    glowEffect2.position = [player1Pos[0], 0.75, player1Pos[2]];
     glowEffect2.radiusStart = glowEffect1.radiusStart;
     glowEffect2.radiusEnd = glowEffect2.radiusStart;
     glowEffect2.rotationStart = -time * 0.4;
-    glowEffect2.rotationEnd = glowEffect2.rotationStart;
-    if (input.keys['KeyE']) 
+    glowEffect2.rotationEnd = glowEffect2.rotationStart;*/
+
+    // If the key E is pressed down and a bomb has not yet exploded
+    // temporary fix for chain bomb explosions
+    if (input.keys['KeyE'] && !hasBomb1Exploded) 
     {
-        //for(let i = 0; i < 2; i++)
-        //{
-        //    let particle = new Particle();
-        //    particle.position = [playerPos[0], 4, playerPos[2]];
-        //    particle.velocity = [(Math.random() - 0.5) * 4.0, (Math.random() - 0.5) * 2.0 + 4, (Math.random() - 0.5) * 4.0];
-        //    particle.colorStart = [1, 0.631, 0];
-        //    particle.colorEnd = [1, 0.631, 0];
-        //    particle.radiusStart = Math.random() * 0.3 + 0.1;
-        //    particle.radiusEnd = 0.0;
-        //    particle.rotationStart = Math.random() * 6.283;
-        //    particle.rotationEnd = Math.random() * 6.283;
-        //    particle.gravityStrength = 1.0;
-        //    particle.texCoord = [7 / 8, 1 / 8, 15 / 16, 3 / 16];
-        //    particle.lifetime = Math.random() * 1.5 + 0.5;
-        //    particleSystem.emit(time, particle);
-//
-        //    particle = new Particle();
-        //    particle.position = [playerPos[0], 4, playerPos[2]];
-        //    particle.velocity = [(Math.random() - 0.5) * 4.0, (Math.random() - 0.5) * 2.0 + 4, (Math.random() - 0.5) * 4.0];
-        //    particle.colorStart = [1, 0.631, 0];
-        //    particle.colorEnd = [1, 0.631, 0];
-        //    particle.radiusStart = Math.random() * 0.3 + 0.1;
-        //    particle.radiusEnd = 0.0;
-        //    particle.rotationStart = Math.random() * 6.283;
-        //    particle.rotationEnd = Math.random() * 6.283;
-        //    particle.gravityStrength = 1.0;
-        //    particle.texCoord = [7 / 8, 3 / 16, 15 / 16, 4 / 16];
-        //    particle.lifetime = Math.random() * 1.5 + 0.5;
-        //    particleSystem.emit(time, particle);
-        //}
-        if(particleTimer <= time)
-        {
-            // Debree
-            for(let i = 0; i < 10; i++)
-            {
-                let particle = new Particle();
-                particle.position = [playerPos[0], 4, playerPos[2]];
-                particle.velocity = [(Math.random() - 0.5) * 4.0, (Math.random() - 0.5) * 2.0 + 4, (Math.random() - 0.5) * 4.0];
-                particle.colorStart = [0.72, 0.651, 0.271];
-                particle.colorEnd = [0.659, 0.565, 0.031];
-                particle.radiusStart = Math.random() * 0.3 + 0.1;
-                particle.radiusEnd = 0.0;
-                particle.rotationStart = Math.random() * 6.283;
-                particle.rotationEnd = Math.random() * 6.283;
-                particle.gravityStrength = 1.0;
-                let xPar = Math.floor(Math.random() * 2);
-                let yPar = Math.floor(Math.random() * 3);
-                particle.texCoord = [(14 + xPar) / 16, (2 + yPar) / 16, (15 + xPar) / 16, (3 + yPar) / 16];
-                particle.lifetime = Math.random() * 1.5 + 0.5;
-                particleSystem.emit(time, particle);
-            }
-            // Dust
-            for(let i = 0; i < 2; i++)
-            {
-                let particle = new Particle();
-                particle.position = [playerPos[0], 4, playerPos[2]];
-                particle.velocity = [(Math.random() - 0.5) * 2.0, (Math.random() - 0.5) * 2.0, (Math.random() - 0.5) * 2.0];
-                particle.colorStart = [1, 0.631, 0];
-                particle.colorEnd = [1, 0.631, 0];
-                particle.radiusStart = 1.0;
-                particle.radiusEnd = 3.0;
-                particle.rotationStart = Math.random();
-                particle.rotationEnd = Math.random();
-                particle.gravityStrength = 0.0;
-                let xPar = Math.floor(Math.random() * 4);
-                particle.texCoord = [xPar / 8, 0 / 8, (xPar + 1) / 8, 1 / 8];
-                particle.lifetime = Math.random() * 0.5 + 0.8;
-                particleSystem.emit(time, particle);
-            }
-            // Explosion
-            for(let i = 0; i < 2; i++)
-            {
-                let particle = new Particle();
-                particle.position = [playerPos[0], 4, playerPos[2]];
-                particle.velocity = [0, 0, 0];
-                particle.colorStart = [1, 1, 0];
-                particle.colorEnd = [1, 0, 0];
-                particle.radiusStart = 1.5;
-                particle.radiusEnd = 4.0;
-                particle.rotationStart = Math.random();
-                particle.rotationEnd = Math.random();
-                particle.gravityStrength = 0.2;
-                let xPar = Math.floor(Math.random() * 4);
-                particle.texCoord = [(xPar + 4) / 8, 0 / 8, (xPar + 5) / 8, 1 / 8];
-                particle.lifetime = Math.random() * 0.3 + 0.1;
-                particleSystem.emit(time, particle);
-            }
-            // Halo
-            let particle = new Particle();
-            particle.position = [playerPos[0], 4, playerPos[2]];
-            particle.velocity = [0.0, 1.0, 0.0];
-            particle.radiusStart = 0.5;
-            particle.radiusEnd = 4.0;
-            particle.gravityStrength = 0.0;
-            particle.colorStart = [1, 0.631, 0];
-            particle.colorEnd = [1, 0.631, 0];
-            particle.rotationStart = Math.random() * 6.283;
-            particle.rotationEnd = particle.rotationStart;
-            particle.texCoord = [6 / 8, 1 / 8, 7 / 8, 2 / 8];
-            particle.lifetime = 0.15;
-            particleSystem.emit(time, particle);
-            particleTimer = time + 0.4;
-        }
-
-        //arena.setTile(Math.floor(playerPos[0]), Math.floor(playerPos[2]), '#');
-        //arena.updateArena(); 
-
-        explodeBomb([Math.floor(playerPos[0]), Math.floor(playerPos[2])], 5);
+        hasBomb1Exploded = true
+        explodeBomb([Math.floor(player1Pos[0]), Math.floor(player1Pos[2])], 5, time);
+    } else if (!input.keys['KeyE']) {
+        hasBomb1Exploded = false
     }
-    //playerBatch.reset();
-    //playerBatch.addInstance([cam.position[0], 1, 1]);
-    playerBatch.updateInstance(0, playerPos);
+
+     // If the key E is pressed down and a bomb has not yet exploded
+    // temporary fix for chain bomb explosions
+    if (input.keys['Enter'] && !hasBomb2Exploded) 
+    {
+        hasBomb2Exploded = true
+        explodeBomb([Math.floor(player2Pos[0]), Math.floor(player2Pos[2])], 5, time);
+    } else if (!input.keys['Enter']) {
+        hasBomb2Exploded = false
+    }
+    //player1Batch.reset();
+    //player1Batch.addInstance([cam.position[0], 1, 1]);
+    player1Batch.updateInstance(0, player1Pos);
+    player2Batch.updateInstance(0, player2Pos)
+
+    // Camera in the average position between the two players
+    // Offset scaled by their distance
+    const averagePosition = player1Pos.map((value, index) => (value + player2Pos[index]) / 2)
+    let distanceOfPositions = 0;
+    for (let i = 0; i < 3; i++) {
+        distanceOfPositions += (player1Pos[i] - player2Pos[i]) ** 2;
+    }
+    distanceOfPositions = Math.sqrt(distanceOfPositions)
+
+    cam.updatePosition(averagePosition, distanceOfPositions)
 
     renderData.reset();
     renderData.pushMatrix(cam.viewMatrix);
@@ -303,4 +256,78 @@ export function RenderFrame()
     renderer.Render(renderData);
 
     requestAnimationFrame(RenderFrame);
+}
+
+function explosionEffect(position, time) {
+    
+        // Debree
+        for(let i = 0; i < 10; i++)
+        {
+            let particle = new Particle();
+            particle.position = [position[0], position[1], position[2]];
+            particle.velocity = [(Math.random() - 0.5) * 4.0, (Math.random() - 0.5) * 2.0 + 4, (Math.random() - 0.5) * 4.0];
+            particle.colorStart = [0.72, 0.651, 0.271];
+            particle.colorEnd = [0.659, 0.565, 0.031];
+            particle.radiusStart = Math.random() * 0.3 + 0.1;
+            particle.radiusEnd = 0.0;
+            particle.rotationStart = Math.random() * 6.283;
+            particle.rotationEnd = Math.random() * 6.283;
+            particle.gravityStrength = 1.0;
+            let xPar = Math.floor(Math.random() * 2);
+            let yPar = Math.floor(Math.random() * 3);
+            particle.texCoord = [(14 + xPar) / 16, (2 + yPar) / 16, (15 + xPar) / 16, (3 + yPar) / 16];
+            particle.lifetime = Math.random() * 1.5 + 0.5;
+            particleSystem.emit(time, particle);
+        }
+        // Dust
+        for(let i = 0; i < 2; i++)
+        {
+            let particle = new Particle();
+            particle.position = [position[0], position[1], position[2]];
+            particle.velocity = [(Math.random() - 0.5) * 2.0, (Math.random() - 0.5) * 2.0, (Math.random() - 0.5) * 2.0];
+            particle.colorStart = [1, 0.631, 0];
+            particle.colorEnd = [1, 0.631, 0];
+            particle.radiusStart = 1.0;
+            particle.radiusEnd = 3.0;
+            particle.rotationStart = Math.random();
+            particle.rotationEnd = Math.random();
+            particle.gravityStrength = 0.0;
+            let xPar = Math.floor(Math.random() * 4);
+            particle.texCoord = [xPar / 8, 0 / 8, (xPar + 1) / 8, 1 / 8];
+            particle.lifetime = Math.random() * 0.5 + 0.8;
+            particleSystem.emit(time, particle);
+        }
+        // Explosion
+        for(let i = 0; i < 2; i++)
+        {
+            let particle = new Particle();
+            particle.position = [position[0], position[1], position[2]];
+            particle.velocity = [0, 0, 0];
+            particle.colorStart = [1, 1, 0];
+            particle.colorEnd = [1, 0, 0];
+            particle.radiusStart = 1.5;
+            particle.radiusEnd = 4.0;
+            particle.rotationStart = Math.random();
+            particle.rotationEnd = Math.random();
+            particle.gravityStrength = 0.2;
+            let xPar = Math.floor(Math.random() * 4);
+            particle.texCoord = [(xPar + 4) / 8, 0 / 8, (xPar + 5) / 8, 1 / 8];
+            particle.lifetime = Math.random() * 0.3 + 0.1;
+            particleSystem.emit(time, particle);
+        }
+        // Halo
+        let particle = new Particle();
+        particle.position = [position[0], position[1], position[2]];
+        particle.velocity = [0.0, 1.0, 0.0];
+        particle.radiusStart = 0.5;
+        particle.radiusEnd = 4.0;
+        particle.gravityStrength = 0.0;
+        particle.colorStart = [1, 0.631, 0];
+        particle.colorEnd = [1, 0.631, 0];
+        particle.rotationStart = Math.random() * 6.283;
+        particle.rotationEnd = particle.rotationStart;
+        particle.texCoord = [6 / 8, 1 / 8, 7 / 8, 2 / 8];
+        particle.lifetime = 0.15;
+        particleSystem.emit(time, particle);
+
 }
