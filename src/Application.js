@@ -55,6 +55,7 @@ export async function Init()
     let floor = resourceCache.addMesh(await loadMesh('/res/meshes/floor.obj'));
     let tombstone = resourceCache.addMesh(await loadMesh('/res/meshes/tombstone.obj'));
     let obstacle = resourceCache.addMesh(await loadMesh('/res/meshes/obstacle.obj'));
+    let torch = resourceCache.addMesh(await loadMesh('/res/meshes/torch.obj'));
     let environment = resourceCache.addMesh(await loadMesh('/res/meshes/environment.obj'));
     let texture1 = resourceCache.addTexture(await loadTexture('/res/textures/stoneWall.png'));
     let texture2 = resourceCache.addTexture(await loadTexture('/res/textures/stoneTiles.png'));
@@ -203,7 +204,19 @@ export function RenderFrame()
     glowEffect2.radiusEnd = glowEffect2.radiusStart;
     glowEffect2.rotationStart = -time * 0.4;
     glowEffect2.rotationEnd = glowEffect2.rotationStart;*/
-
+    let fire = new Particle();
+    fire.position = [7.5, 0.8, 7.5];
+    fire.velocity = [(Math.random() - 0.5) * 2.0, (Math.random() - 0.5) * 2.0 + 2, (Math.random() - 0.5) * 2.0];
+    fire.colorStart = [0.8, 0.5, 0.2];
+    fire.colorEnd = [1, 0.2, 0.2];
+    fire.radiusStart = Math.random() * 0.3 + 0.1;
+    fire.radiusEnd = 0.0;
+    fire.rotationStart = Math.random() * 6.283;
+    fire.rotationEnd = Math.random() * 6.283;
+    let fireX = Math.floor(Math.random() * 4);
+    fire.texCoord = [fireX / 8, 0 / 8, (fireX + 1) / 8, 1 / 8];
+    fire.lifetime = Math.random() * 0.3 + 0.3;
+    particleSystem.emit(time, fire);
     // If the key E is pressed down and a bomb has not yet exploded
     // temporary fix for chain bomb explosions
     if (input.keys['KeyE'] && !hasBomb1Exploded) 
