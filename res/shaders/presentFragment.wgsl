@@ -56,7 +56,7 @@ struct CameraData {
 	var startUv = input.uv;
 	var endUv = endFrag.xy;
 
-	var sampleCount: f32 = 40.0;
+	var sampleCount: f32 = 32.0;
 	var dtUv = (endUv - startUv) / sampleCount;
 	var dtView = (endView - startView) / sampleCount;
 	var currUv = startUv;
@@ -83,7 +83,7 @@ struct CameraData {
 		var b = currPos.xyz - rayOrigin;
 		var la = a.x * a.x + a.y * a.y + a.z * a.z;
 		var lb = b.x * b.x + b.y * b.y + b.z * b.z;
-		if(lb >= la && lb - la <= 0.5)
+		if(lb >= la && lb - la <= 1.5)
 		{
 			var reflection = textureSample(colorAttachment, mySampler, currUv);
 			return mix(outColor, reflection, reflectivity);

@@ -138,11 +138,11 @@ function explodeBomb(coords, radius, time) {
             else if (t === 'T') {
                 arena.setTile(newX, newY, '_');
                 dirty = true;
-                explosionEffect([newX + 0.5, -0.5, newY + 0.5], time)
+                explosionEffect([newX + 0.5, 0.5, newY + 0.5], time)
                 break
             }
             else if (t === '_') {
-                explosionEffect([newX + 0.5, -0.5, newY + 0.5], time)
+                explosionEffect([newX + 0.5, 0.5, newY + 0.5], time)
 
                 continue
             }
@@ -300,8 +300,8 @@ function explosionEffect(position, time) {
             particle.velocity = [(Math.random() - 0.5) * 2.0, (Math.random() - 0.5) * 2.0, (Math.random() - 0.5) * 2.0];
             particle.colorStart = [1, 0.631, 0];
             particle.colorEnd = [1, 0.631, 0];
-            particle.radiusStart = 1.0;
-            particle.radiusEnd = 3.0;
+            particle.radiusStart = 0.5;
+            particle.radiusEnd = 2.0;
             particle.rotationStart = Math.random();
             particle.rotationEnd = Math.random();
             particle.gravityStrength = 0.0;
@@ -318,8 +318,8 @@ function explosionEffect(position, time) {
             particle.velocity = [0, 0, 0];
             particle.colorStart = [1, 1, 0];
             particle.colorEnd = [1, 0, 0];
-            particle.radiusStart = 1.5;
-            particle.radiusEnd = 4.0;
+            particle.radiusStart = 1.0;
+            particle.radiusEnd = 2.0;
             particle.rotationStart = Math.random();
             particle.rotationEnd = Math.random();
             particle.gravityStrength = 0.2;
@@ -332,8 +332,8 @@ function explosionEffect(position, time) {
         let particle = new Particle();
         particle.position = [position[0], position[1], position[2]];
         particle.velocity = [0.0, 1.0, 0.0];
-        particle.radiusStart = 0.5;
-        particle.radiusEnd = 4.0;
+        particle.radiusStart = 0.1;
+        particle.radiusEnd = 2.0;
         particle.gravityStrength = 0.0;
         particle.colorStart = [1, 0.631, 0];
         particle.colorEnd = [1, 0.631, 0];

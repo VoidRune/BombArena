@@ -368,7 +368,12 @@ export default class Renderer
                 topology: 'triangle-list',
                 cullMode: 'back',
                 frontFace: 'cw'
-            }
+            },
+            depthStencil: {
+                depthWriteEnabled: false,
+                depthCompare: 'less',
+                format: this.depthAttachment.format,
+            },
         });
     
         this.fontPipeline = device.createRenderPipeline({
@@ -406,6 +411,11 @@ export default class Renderer
                 topology: 'triangle-list',
                 cullMode: 'back',
                 frontFace: 'cw'
+            },
+            depthStencil: {
+                depthWriteEnabled: false,
+                depthCompare: 'less',
+                format: this.depthAttachment.format,
             },
         });
 
@@ -721,6 +731,13 @@ export default class Renderer
                 loadOp: "clear",
                 storeOp: "store",
                 }],
+                depthStencilAttachment: {
+                    view: this.depthAttachment.createView(),
+            
+                    depthClearValue: 1.0,
+                    depthLoadOp: 'load',
+                    depthStoreOp: 'discard',
+                },
             });
 
             if(this.particleSystem.particleCount > 0)
