@@ -29,7 +29,7 @@ struct CameraData {
     var reflectivity = 0.0;
 	if(normal.y == 1.0)
 	{
-		reflectivity = 0.2 * (1 - overlay.a);
+		reflectivity = 0.8 * (1 - overlay.a);
 	}
 
 	//return overlay.aaaa;
@@ -59,6 +59,7 @@ struct CameraData {
 	var sampleCount: f32 = 32.0;
 	var dtUv = (endUv - startUv) / sampleCount;
 	var dtView = (endView - startView) / sampleCount;
+	var stepLen = sampleCount * length(dtView);
 	var currUv = startUv;
 	var currPos = startView;
 
@@ -83,7 +84,7 @@ struct CameraData {
 		var b = currPos.xyz - rayOrigin;
 		var la = a.x * a.x + a.y * a.y + a.z * a.z;
 		var lb = b.x * b.x + b.y * b.y + b.z * b.z;
-		if(lb >= la && lb - la <= 1.5)
+		if(lb >= la && lb - la <= stepLen)
 		{
 			var reflection = textureSample(colorAttachment, mySampler, currUv);
 			return mix(outColor, reflection, reflectivity);

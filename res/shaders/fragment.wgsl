@@ -1,10 +1,12 @@
 struct FragmentInput {
     @location(0) pos: vec4f,
-    @location(1) norm: vec3f,
-    @location(2) uv: vec2f,
-    @location(3) shadowPos: vec3f,
-    @location(4) lightPos: vec3f,
-    @location(5) camDir: vec3f,
+    @location(1) uv: vec2f,
+    @location(2) T: vec3f,
+    @location(3) B: vec3f,
+    @location(4) N: vec3f,
+    @location(5) shadowPos: vec3f,
+    @location(6) lightPos: vec3f,
+    @location(7) camDir: vec3f,
 };
 
 
@@ -13,6 +15,7 @@ struct FragmentInput {
 
 @group(1) @binding(0) var textureSampler: sampler;
 @group(1) @binding(1) var texture: texture_2d<f32>;
+@group(1) @binding(2) var normalTexture: texture_2d<f32>;
 
 struct FragmentOutput {
     @location(0) pos: vec4f,
@@ -41,18 +44,23 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput
     }
     visibility /= 9.0;
 
-    let lambertFactor = max(dot(normalize(input.lightPos - input.pos.xyz), input.norm), 0.0);
+    var normal = textureSample(normalTexture, textureSampler, input.uv).rgb;
+    //normal = normalize(mat3x3<f32>(input.T, input.B, input.N) * normal);
+
+    normal = input.N;
+
+    let lambertFactor = max(dot(normalize(input.lightPos - input.pos.xyz), normal), 0.0);
     let lightingFactor = min(ambientFactor + visibility * lambertFactor, 1.0);
 
     var ambient = textureSample(texture, textureSampler, input.uv) * lightingFactor;
-    var specular = pow(max(dot(reflect(normalize(input.camDir), input.norm), normalize(input.lightPos)), 0.0), 100) * lightingFactor;
+    var specular = pow(max(dot(reflect(normalize(input.camDir), normal), normalize(input.lightPos)), 0.0), 100) * lightingFactor;
 
-    let phong = reflect(-input.lightPos, input.norm);
-    //var shadowDepth = textureSample(shadowmapTexture, shadowmapSampler, input.uv);
+    let phong = reflect(-input.lightPos, normal);
+
     var output: FragmentOutput;
     output.pos = input.pos;
     output.color = vec4f(ambient + specular);
-    output.normal = vec4f(input.norm, 1);
+    output.normal = vec4f(normal, 1);
     //if(input.shadowPos.x < 0 || input.shadowPos.x > 1 || input.shadowPos.y < 0 || input.shadowPos.y > 1)
     //{
     //    output.color = vec4f(1);

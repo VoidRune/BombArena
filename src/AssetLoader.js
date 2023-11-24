@@ -91,10 +91,12 @@ export async function loadMesh(url)
             const [,vIndex,,vtIndex,,vnIndex] = [...id.match(indicesRegex)]
                 .map(entry => Number(entry) - 1);
 
+            // POSITION
             vertices.push(vData[vIndex][0]);
             vertices.push(vData[vIndex][1]);
             vertices.push(vData[vIndex][2]);
 
+            // NORMAL
             if(vnData[vnIndex])
             {
                 vertices.push(vnData[vnIndex][0]);
@@ -108,6 +110,12 @@ export async function loadMesh(url)
                 vertices.push(0);
             }
 
+            // TANGENT
+            vertices.push(0.0);
+            vertices.push(0.0);
+            vertices.push(0.0);
+
+            // TEX COORD
             if(vtData[vtIndex])
             {
                 vertices.push(vtData[vtIndex][0]);
@@ -121,6 +129,45 @@ export async function loadMesh(url)
 
             cacheLength++;
         }
+    }
+
+    let sizeOfVertex = 11;
+    for(let i = 0; i < indices.length; i+=3)
+    {
+        // CALCULATE TANGENT
+        let i1 = indices[i + 0];
+        let i2 = indices[i + 1];
+        let i3 = indices[i + 2];
+
+        let p1 = [vertices[sizeOfVertex * i1 + 0], vertices[sizeOfVertex * i1 + 1], vertices[sizeOfVertex * i1 + 2]];
+        let p2 = [vertices[sizeOfVertex * i2 + 0], vertices[sizeOfVertex * i2 + 1], vertices[sizeOfVertex * i2 + 2]];
+        let p3 = [vertices[sizeOfVertex * i3 + 0], vertices[sizeOfVertex * i3 + 1], vertices[sizeOfVertex * i3 + 2]];
+        let u1 = [vertices[sizeOfVertex * i1 + 9], vertices[sizeOfVertex * i1 + 10]];
+        let u2 = [vertices[sizeOfVertex * i2 + 9], vertices[sizeOfVertex * i2 + 10]];
+        let u3 = [vertices[sizeOfVertex * i3 + 9], vertices[sizeOfVertex * i3 + 10]];
+
+        let edge1 = [p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2]];
+        let edge2 = [p3[0] - p1[0], p3[1] - p1[1], p3[2] - p1[2]];
+        let deltaUV1 = [u2[0] - u1[0], u2[1] - u1[1]];
+        let deltaUV2 = [u3[0] - u1[0], u3[1] - u1[1]];
+
+        let f = 1.0 / (deltaUV1[0] * deltaUV2[1] - deltaUV2[0] * deltaUV1[1]);
+        let tangent = [];
+        tangent.push(f * (deltaUV2[1] * edge1[0] - deltaUV1[1] * edge2[0]));
+        tangent.push(f * (deltaUV2[1] * edge1[1] - deltaUV1[1] * edge2[1]));
+        tangent.push(f * (deltaUV2[1] * edge1[2] - deltaUV1[1] * edge2[2]));
+
+        vertices[sizeOfVertex * i1 + 6] = tangent[0];
+        vertices[sizeOfVertex * i1 + 7] = tangent[1];
+        vertices[sizeOfVertex * i1 + 8] = tangent[2];
+
+        vertices[sizeOfVertex * i2 + 6] = tangent[0];
+        vertices[sizeOfVertex * i2 + 7] = tangent[1];
+        vertices[sizeOfVertex * i2 + 8] = tangent[2];
+
+        vertices[sizeOfVertex * i3 + 6] = tangent[0];
+        vertices[sizeOfVertex * i3 + 7] = tangent[1];
+        vertices[sizeOfVertex * i3 + 8] = tangent[2];
     }
 
     return new Mesh({ vertices: new Float32Array(vertices), indices: new Uint32Array(indices) });

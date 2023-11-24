@@ -5,7 +5,7 @@ export default class Camera
 {
     constructor(canvas, input, {
         position = [0, 5,-2],
-        movementSpeed = 2.5,
+        movementSpeed = 0.5,
 
         pitch = -Math.PI/3,
         yaw = 0,

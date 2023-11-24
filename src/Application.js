@@ -57,8 +57,8 @@ export async function Init()
     let obstacle = resourceCache.addMesh(await loadMesh('/res/meshes/obstacle.obj'));
     let torch = resourceCache.addMesh(await loadMesh('/res/meshes/torch.obj'));
     let environment = resourceCache.addMesh(await loadMesh('/res/meshes/environment.obj'));
-    let texture1 = resourceCache.addTexture(await loadTexture('/res/textures/stoneWall.png'));
-    let texture2 = resourceCache.addTexture(await loadTexture('/res/textures/stoneTiles.png'));
+    let texture1 = resourceCache.addMaterial(await loadTexture('/res/textures/RockWall/albedo.png'), await loadTexture('/res/textures/RockWall/normalGL.png'));
+    let texture2 = resourceCache.addMaterial(await loadTexture('/res/textures/stoneTiles.png'), await loadTexture('/res/textures/RockWall/normalGL.png'));
     
     arenaEnvironmentBatch.setMesh(environment);
     arenaEnvironmentBatch.addInstance([0, 0, 0]);

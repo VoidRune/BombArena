@@ -16,7 +16,8 @@ struct CameraData {
 fn vertexMain(
     @location(0) pos: vec3f,
     @location(1) norm: vec3f,
-    @location(2) uv: vec2f,
+    @location(2) tang: vec3f,
+    @location(3) uv: vec2f,
     @builtin(instance_index) id: u32,
 ) -> @builtin(position) vec4f
 {

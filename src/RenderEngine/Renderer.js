@@ -194,6 +194,31 @@ export default class Renderer
         });
     
         const vertexBufferLayout = {
+            arrayStride: (3 + 3 + 3 + 2) * 4,
+            attributes: [
+            {
+                format: "float32x3",
+                offset: 0,
+                shaderLocation: 0,
+            },
+            {
+                format: "float32x3",
+                offset: 4 * 3,
+                shaderLocation: 1,
+            },
+            {
+                format: "float32x3",
+                offset: 4 * 6,
+                shaderLocation: 2,
+            },
+            {
+                format: "float32x2",
+                offset: 4 * 9,
+                shaderLocation: 3,
+            }],
+        };
+
+        const fontVertexBufferLayout = {
             arrayStride: (3 + 3 + 2) * 4,
             attributes: [
             {
@@ -384,7 +409,7 @@ export default class Renderer
                     code: fontVertexShader
                 }),
                 entryPoint: "vertexMain",
-                buffers: [vertexBufferLayout]
+                buffers: [fontVertexBufferLayout]
             },
             fragment: {
                 module: device.createShaderModule({

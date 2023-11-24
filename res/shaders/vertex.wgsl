@@ -14,11 +14,13 @@ struct CameraData {
 
 struct VertexOutput {
     @location(0) pos: vec4f,
-    @location(1) norm: vec3f,
-    @location(2) uv: vec2f,
-    @location(3) shadowPos: vec3f,
-    @location(4) lightPos: vec3f,
-    @location(5) camDir: vec3f,
+    @location(1) uv: vec2f,
+    @location(2) T: vec3f,
+    @location(3) B: vec3f,
+    @location(4) N: vec3f,
+    @location(5) shadowPos: vec3f,
+    @location(6) lightPos: vec3f,
+    @location(7) camDir: vec3f,
 
     @builtin(position) position: vec4f,
 };
@@ -27,15 +29,21 @@ struct VertexOutput {
 fn vertexMain(
     @location(0) pos: vec3f,
     @location(1) norm: vec3f,
-    @location(2) uv: vec2f,
+    @location(2) tang: vec3f,
+    @location(3) uv: vec2f,
     @builtin(instance_index) id: u32,
 ) -> VertexOutput
 {
     var output: VertexOutput;
     output.pos = transforms[id] * vec4f(pos, 1);
     output.position = cam.projection * cam.view * output.pos;
-    output.norm = norm;
+    //output.norm = norm;
+    //output.tang = tang;
     output.uv = uv;
+
+    output.T = normalize(tang);
+    output.N = normalize(norm);
+    output.B = cross(output.N, output.T);
 
     let posFromLight = cam.light * output.pos;
     output.shadowPos = vec3(

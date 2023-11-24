@@ -45,9 +45,11 @@ export default class ResourceCache
         return this.bufferCount++;
     }
 
-    addTexture(textureData)
+    addMaterial(textureData, normalData)
     {
         let texture = createTexture(this.device, textureData);
+        let normal = createTexture(this.device, normalData);
+
         let bindGroup = this.device.createBindGroup({
             label: "Material",
             layout: this.materialBindLayout,
@@ -59,6 +61,10 @@ export default class ResourceCache
             {
                 binding: 1,
                 resource: texture.createView()
+            },
+            {
+                binding: 2,
+                resource: normal.createView()
             }],
         });
 
