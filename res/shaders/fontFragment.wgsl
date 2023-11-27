@@ -1,5 +1,6 @@
 struct FragmentInput {
-    @location(0) uv: vec2f,
+    @location(0) col: vec3f,
+    @location(1) uv: vec2f,
 };
 
 @group(1) @binding(0) var mySampler: sampler;
@@ -24,8 +25,8 @@ struct FragmentOutput {
 @fragment
 fn fragmentMain(input: FragmentInput) -> FragmentOutput
 {
-    var bgColor: vec4f = vec4f(0, 0.2, 0.8, 0);
-    var fgColor: vec4f = vec4f(0.4, 0.8, 0.2, 1);
+    var bgColor: vec4f = vec4f(0, 0, 0, 0);
+    var fgColor: vec4f = vec4f(input.col, 1);
 
     var msd : vec3f = textureSample(texture, mySampler, input.uv).rgb;
     var sd : f32 = median(msd);

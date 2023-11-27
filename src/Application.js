@@ -21,6 +21,8 @@ canvas.height = window.innerHeight;
 
 var renderer = new Renderer(device, canvas, context);
 var particleSystem;
+var fontGenerator;
+
 var input = new Input(canvas);
 var cam = new Camera(canvas, input);
 var renderData = new RenderData();
@@ -42,17 +44,24 @@ let player2Pos = [arena.arenaData.length - 1.5, 0, arena.arenaData[0].length -1.
 console.log(arena.arenaData)
 console.log(player2Pos)
 
+let dummyText;
+
 export async function Init()
 {
     let resourceCache = renderer.resourceCache;
-    let fontGenerator = renderer.fontGenerator;
+    fontGenerator = renderer.fontGenerator;
     particleSystem = renderer.particleSystem;
-    await fontGenerator.init();
-    let str = await (await fetch("res/shaders/fontFragment.wgsl")).text();
-    fontGenerator.addText(str, 0, 8, 0);
-    
-    await renderer.Initialize();
 
+    await renderer.Initialize();
+    
+    dummyText = new Text();
+    dummyText.string = "Omegalul";
+    dummyText.position = [20, canvas.height];
+    dummyText.color = [1, 1, 1];
+    dummyText.scale = 400;
+    fontGenerator.addText(dummyText);
+    
+    
     let wall = resourceCache.addMesh(await loadMesh('/res/meshes/wall.obj'));
     let floor = resourceCache.addMesh(await loadMesh('/res/meshes/floor.obj'));
     let tombstone = resourceCache.addMesh(await loadMesh('/res/meshes/tombstone.obj'));
@@ -218,6 +227,9 @@ export function RenderFrame()
     
     arena.collideCircle(player2Pos, velocity2, 0.4);
 
+    dummyText.string = "Omegalul time is running out: " + time.toFixed(2);
+    dummyText.color = HSVtoRGB(time * 0.1, 1.0, 1.0);
+
     powerUpEffect.position = [1.5, 0.4 + Math.sin(time * 1.5) * 0.2, 5.5];
     powerUpEffect.colorStart = HSVtoRGB(time * 0.2, 1.0, 1.0);
     powerUpEffect.colorEnd = powerUpEffect.colorStart;
@@ -292,10 +304,14 @@ export function RenderFrame()
     ortho[5] *= -1;
     renderData.pushMatrix(mat4.multiply(mat4.create(), ortho, mat4.lookAt(mat4.create(), lightPos, [8, 0, 8], [0, -1, 0])));
     renderData.pushVec4(lightPos);
+    let uiMatrix = mat4.ortho(mat4.create(), 0, canvas.width, 0, canvas.height, -10, 10);
+    renderData.pushMatrix(uiMatrix);
+
 
     renderData.instanceBatches = batches;
 
     particleSystem.update(time, dt, cam.position);
+    fontGenerator.update();
     renderer.Render(renderData);
 
     requestAnimationFrame(RenderFrame);

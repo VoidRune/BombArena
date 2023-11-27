@@ -134,7 +134,7 @@ export default class Renderer
         this.finalCompositionBindGroup;
 
         this.fontGenerator = new FontGenerator('res/font/Droidsansmono_ttf.csv');
-        //this.fontGenerator.init();
+
         this.resourceCache = new ResourceCache(device);
         this.particleSystem = new ParticleSystem();
     }
@@ -143,6 +143,8 @@ export default class Renderer
     {
         let device = this.device;
         let canvas = this.canvas;
+
+        await this.fontGenerator.init();
 
 
         const shadowmapVertes = await (await fetch("res/shaders/shadowmapVertex.wgsl")).text();
@@ -219,21 +221,21 @@ export default class Renderer
         };
 
         const fontVertexBufferLayout = {
-            arrayStride: (3 + 3 + 2) * 4,
+            arrayStride: (2 + 3 + 2) * 4,
             attributes: [
             {
-                format: "float32x3",
+                format: "float32x2",
                 offset: 0,
                 shaderLocation: 0,
             },
             {
                 format: "float32x3",
-                offset: 4 * 3,
+                offset: 4 * 2,
                 shaderLocation: 1,
             },
             {
                 format: "float32x2",
-                offset: 4 * 6,
+                offset: 4 * 5,
                 shaderLocation: 2,
             }],
         };
@@ -242,21 +244,20 @@ export default class Renderer
         let font = createTexture(device, fontImageData, false);
     
         this.quadVertices = new Float32Array(this.fontGenerator.vert);
-        this.quadIndices = new Uint32Array(this.fontGenerator.ind);
     
         this.quadVertexBuffer = device.createBuffer({
             label: "Triangle vertices",
-            size: this.quadVertices.byteLength,
+            size: 4 * 4 * this.fontGenerator.vertexSize * this.fontGenerator.maxCharacters,
             usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
         });
     
         this.quadIndexBuffer = device.createBuffer({
             label: "indices",
-            size: this.quadIndices.byteLength,
+            size: this.fontGenerator.quadIndices.byteLength,
             usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
         });
-        device.queue.writeBuffer(this.quadVertexBuffer, /*bufferOffset=*/0, this.quadVertices);
-        device.queue.writeBuffer(this.quadIndexBuffer, /*bufferOffset=*/0, this.quadIndices);
+        //device.queue.writeBuffer(this.quadVertexBuffer, /*bufferOffset=*/0, this.quadVertices);
+        device.queue.writeBuffer(this.quadIndexBuffer, /*bufferOffset=*/0, this.fontGenerator.quadIndices);
     
         let pointSampler = device.createSampler({
             magFilter: 'nearest',
@@ -765,22 +766,32 @@ export default class Renderer
                 },
             });
 
+            
             if(this.particleSystem.particleCount > 0)
             {
                 device.queue.writeBuffer(this.ParticleSSBOUniformBuffer, 0, this.particleSystem.particleGPUBuffer, 0, this.particleSystem.particleCount * this.particleSystem.PARTICLE_SIZE);
-
+                
                 overlayPass.setBindGroup(0, this.globalBillboardBindGroup);
                 overlayPass.setBindGroup(1, this.BillboardBindGroup);
                 overlayPass.setPipeline(this.billboardPipeline);
                 overlayPass.draw(6, this.particleSystem.particleCount, 0, 0, 0);
             }
+            
+            if(this.fontGenerator.dirty == true)
+            {
+                device.queue.writeBuffer(this.quadVertexBuffer, /*bufferOffset=*/0, this.fontGenerator.quadVertices, 0, 4 * this.fontGenerator.vertexSize * this.fontGenerator.indIndex);
+                this.fontGenerator.dirty = false;
+            }
 
-            overlayPass.setBindGroup(0, this.globalFontBindGroup);
-            overlayPass.setPipeline(this.fontPipeline);
-            overlayPass.setBindGroup(1, this.fontBindGroup);
-            overlayPass.setVertexBuffer(0, this.quadVertexBuffer);
-            overlayPass.setIndexBuffer(this.quadIndexBuffer, "uint32");
-            overlayPass.drawIndexed(this.quadIndices.length, 1, 0, 0, 0);
+            if(this.fontGenerator.indIndex > 0)
+            {
+                overlayPass.setBindGroup(0, this.globalFontBindGroup);
+                overlayPass.setPipeline(this.fontPipeline);
+                overlayPass.setBindGroup(1, this.fontBindGroup);
+                overlayPass.setVertexBuffer(0, this.quadVertexBuffer);
+                overlayPass.setIndexBuffer(this.quadIndexBuffer, "uint32");
+                overlayPass.drawIndexed(this.fontGenerator.indIndex * 1.5, 1, 0, 0, 0);
+            }
 
             overlayPass.end();
         }

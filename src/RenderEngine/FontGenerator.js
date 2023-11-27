@@ -1,15 +1,47 @@
 
+export class Text
+{
+    constructor(string = "Test",
+                position = [0, 0.1],
+                scale = 1,
+                color = [1, 1, 1])
+    {
+        this.string = string;
+        this.position = position;
+        this.scale = scale;
+        this.color = color;
+    }
+}
+
 export default class FontGenerator
 {
     constructor(characterDataUrl, {
-        maxCharacters = 16384,
+        maxCharacters = 1024,
 
     } = {}){
         this.characterDataUrl = characterDataUrl;
+        this.maxCharacters = maxCharacters;
         this.vert = [];
-        this.ind = [];
         this.chars = {};
         this.indIndex = 0;
+
+        this.dirty = false;
+
+        this.vertexSize = (2 + 3 + 2);
+        this.quadVertices = new Float32Array(maxCharacters * 4 * this.vertexSize);
+        this.quadIndices = new Uint32Array(maxCharacters * 6);
+
+        this.textObjects = [];
+
+        for(let i = 0; i < maxCharacters; i++)
+        {
+            this.quadIndices[i * 6 + 0] = i * 4 + 0;
+            this.quadIndices[i * 6 + 1] = i * 4 + 1;
+            this.quadIndices[i * 6 + 2] = i * 4 + 2;
+            this.quadIndices[i * 6 + 3] = i * 4 + 2;
+            this.quadIndices[i * 6 + 4] = i * 4 + 3;
+            this.quadIndices[i * 6 + 5] = i * 4 + 0;
+        }
     }
 
     async init()
@@ -45,20 +77,37 @@ export default class FontGenerator
 
     reset()
     {
-        this.vert = [];
-        this.ind = [];
         this.indIndex = 0;
     }
 
-    addText(text, xPos, yPos, zPos)
+    update()
+    {
+        this.indIndex = 0;
+
+        for (let i = 0; i < this.textObjects.length; i++)
+        {
+            let t = this.textObjects[i];
+            this.generateMesh(t);
+        }
+
+    }
+
+    addText(text)
     {  
+        this.textObjects.push(text);
+
+        this.generateMesh(text);
+    }
+
+    generateMesh(text)
+    {
         let advance = 0;
         let yadvance = 0;
 
         let spaceAdvance = this.chars[' '][4];
 
-        for (let i = 0; i < text.length; i++) { 
-            let c = text[i];
+        for (let i = 0; i < text.string.length; i++) { 
+            let c = text.string[i];
 
             if(c == '\n')
             {
@@ -79,21 +128,45 @@ export default class FontGenerator
             if(this.chars[c])
             {
                 let [ w, h, xoffset, yoffset, xadvance, x, y] = this.chars[c];
-                //console.log(c, w, h, xoffset, yoffset, xadvance);
-                this.vert.push(xPos + advance + 0 + xoffset, yPos + yadvance - h - yoffset, zPos, 0, 0, 0, x, 1-(y+h));
-                this.vert.push(xPos + advance + 0 + xoffset, yPos + yadvance + 0 - yoffset, zPos, 0, 0, 0, x, 1-y);
-                this.vert.push(xPos + advance + w + xoffset, yPos + yadvance + 0 - yoffset, zPos, 0, 0, 0, x+w, 1-y);
-                this.vert.push(xPos + advance + w + xoffset, yPos + yadvance - h - yoffset, zPos, 0, 0, 0, x+w, 1-(y+h));
-        
-                this.ind.push(this.indIndex + 0);
-                this.ind.push(this.indIndex + 1);
-                this.ind.push(this.indIndex + 2);
-                this.ind.push(this.indIndex + 2);
-                this.ind.push(this.indIndex + 3);
-                this.ind.push(this.indIndex + 0);
+
+                let a = this.vertexSize * this.indIndex;
+                this.quadVertices[a + 0] = text.position[0] + text.scale * (advance + 0 + xoffset);
+                this.quadVertices[a + 1] = text.position[1] + text.scale * (yadvance - h - yoffset);
+                this.quadVertices[a + 2] = text.color[0];
+                this.quadVertices[a + 3] = text.color[1];
+                this.quadVertices[a + 4] = text.color[2];
+                this.quadVertices[a + 5] = x;
+                this.quadVertices[a + 6] = 1-(y+h);
+
+                this.quadVertices[a + 7 + 0] = text.position[0] + text.scale * (advance + 0 + xoffset);
+                this.quadVertices[a + 7 + 1] = text.position[1] + text.scale * (yadvance + 0 - yoffset);
+                this.quadVertices[a + 7 + 2] = text.color[0];
+                this.quadVertices[a + 7 + 3] = text.color[1];
+                this.quadVertices[a + 7 + 4] = text.color[2];
+                this.quadVertices[a + 7 + 5] = x;
+                this.quadVertices[a + 7 + 6] = 1-y;
+
+                this.quadVertices[a + 14 + 0] = text.position[0] + text.scale * (advance + w + xoffset);
+                this.quadVertices[a + 14 + 1] = text.position[1] + text.scale * (yadvance + 0 - yoffset);
+                this.quadVertices[a + 14 + 2] = text.color[0];
+                this.quadVertices[a + 14 + 3] = text.color[1];
+                this.quadVertices[a + 14 + 4] = text.color[2];
+                this.quadVertices[a + 14 + 5] = x+w;
+                this.quadVertices[a + 14 + 6] = 1-y;
+
+                this.quadVertices[a + 21 + 0] = text.position[0] + text.scale * (advance + w + xoffset);
+                this.quadVertices[a + 21 + 1] = text.position[1] + text.scale * (yadvance - h - yoffset);
+                this.quadVertices[a + 21 + 2] = text.color[0];
+                this.quadVertices[a + 21 + 3] = text.color[1];
+                this.quadVertices[a + 21 + 4] = text.color[2];
+                this.quadVertices[a + 21 + 5] = x+w;
+                this.quadVertices[a + 21 + 6] = 1-(y+h);
+
                 this.indIndex += 4;
                 advance += xadvance;
             }
         }
+
+        this.dirty = true;
     }
 }
