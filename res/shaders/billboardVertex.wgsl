@@ -18,7 +18,7 @@ struct Particle
 };
 
 @group(0) @binding(0) var<uniform> cam: CameraData;
-@group(0) @binding(1) var<uniform> particles: array<Particle, 512>;
+@group(0) @binding(1) var<storage> particles: array<Particle, 512>;
 
 
 const OFFSETS = array<vec2<f32>, 6>(

@@ -33,6 +33,8 @@ var batches = [];
 let glowEffect1 = new Particle();
 let glowEffect2 = new Particle();
 
+let powerUpEffect = new Particle();
+
 const arena = new Arena();
 
 let player1Pos = [1.5, 0, 1.5]
@@ -91,6 +93,11 @@ export async function Init()
     batchTeapot.addInstance([-15, 10, 10]);
     batches.push(batchTeapot);
 
+
+    powerUpEffect.position = [2, 2, 2];
+    powerUpEffect.lifetime = 99999999;
+    powerUpEffect.texCoord = [0 / 8, 7 / 8, 1 / 8, 8 / 8];
+    particleSystem.emit(0, powerUpEffect);
 
     /*glowEffect1.lifetime = 99999999;
     glowEffect1.texCoord = [0 / 8, 1 / 8, 4 / 8, 5 / 8];
@@ -160,6 +167,24 @@ let lastTime = performance.now() / 1000;
 let hasBomb1Exploded = false
 let hasBomb2Exploded = false
 
+function HSVtoRGB(h, s, v) {
+    var r, g, b, i, f, p, q, t;
+    i = Math.floor(h * 6);
+    f = h * 6 - i;
+    p = v * (1 - s);
+    q = v * (1 - f * s);
+    t = v * (1 - (1 - f) * s);
+    switch (i % 6) {
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+    }
+    return [r, g, b]
+}
+
 export function RenderFrame()
 {
     let time = performance.now() / 1000;
@@ -193,6 +218,11 @@ export function RenderFrame()
     
     arena.collideCircle(player2Pos, velocity2, 0.4);
 
+    powerUpEffect.position = [1.5, 0.4 + Math.sin(time * 1.5) * 0.2, 5.5];
+    powerUpEffect.colorStart = HSVtoRGB(time * 0.2, 1.0, 1.0);
+    powerUpEffect.colorEnd = powerUpEffect.colorStart;
+    powerUpEffect.radiusStart = 0.4;
+    powerUpEffect.radiusEnd = powerUpEffect.radiusStart;
     /*
     glowEffect1.position = [player1Pos[0], 0.75, player1Pos[2]];
     glowEffect1.radiusStart = 1.5 + Math.sin(time) * 0.5;

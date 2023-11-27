@@ -29,7 +29,7 @@ struct CameraData {
     var reflectivity = 0.0;
 	if(normal.y == 1.0)
 	{
-		reflectivity = 0.8 * (1 - overlay.a);
+		reflectivity = 0.4 * (1 - overlay.a) * (1 - overlay.a);
 	}
 
 	//return overlay.aaaa;

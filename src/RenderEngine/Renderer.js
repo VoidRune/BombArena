@@ -488,7 +488,7 @@ export default class Renderer
         this.ParticleSSBOUniformBuffer = device.createBuffer({
             label: "Particle buffer",
             size: 4 * this.particleSystem.PARTICLE_SIZE * this.particleSystem.maxParticles,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
         });
 
         this.globalBindGroup = device.createBindGroup({

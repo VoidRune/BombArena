@@ -34,7 +34,7 @@ export class Particle
 
 export default class ParticleSystem
 {
-    constructor(maxParticles = 512){
+    constructor(maxParticles = 2048){
         this.maxParticles = maxParticles;
         this.particles = [];
         this.PARTICLE_SIZE = (3 + 1 + 4 + 4 + 4);

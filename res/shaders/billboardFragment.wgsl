@@ -19,6 +19,6 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput
     var sampledColor: f32 = textureSample(texture, textureSampler, uv).r;
 
     var output: FragmentOutput;
-    output.color = vec4f(input.color.rgb, sampledColor * input.color.a);
+    output.color = vec4f(input.color.rgb, sampledColor * min(input.color.a, 1.0));
     return output;
 }
