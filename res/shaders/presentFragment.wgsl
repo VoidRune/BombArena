@@ -26,11 +26,11 @@ struct CameraData {
     var normal = textureSample(normalAttachment, mySampler, input.uv);
 	var overlay = textureSample(overlayAttachment, mySampler, input.uv);
 	var outColor = color * (1 - overlay.a) + overlay;
-    var reflectivity = 0.0;
-	if(normal.y == 1.0)
-	{
-		reflectivity = 0.4 * (1 - overlay.a) * (1 - overlay.a);
-	}
+    var reflectivity = 0.8 * (1 - overlay.a) * (1 - overlay.a);
+	//if(normal.y == 1.0)
+	//{
+	//	reflectivity = 0.4 * (1 - overlay.a) * (1 - overlay.a);
+	//}
 
 	//return overlay.aaaa;
 	

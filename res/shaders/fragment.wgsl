@@ -24,6 +24,7 @@ struct FragmentOutput {
 };
 
 const ambientFactor = 0.2;
+const specularFactor = 0.2;
 
 @fragment
 fn fragmentMain(input: FragmentInput) -> FragmentOutput
@@ -44,22 +45,25 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput
     }
     visibility /= 9.0;
 
-    var normal = textureSample(normalTexture, textureSampler, input.uv).rgb;
-    //normal = normalize(mat3x3<f32>(input.T, input.B, input.N) * normal);
+    var normal = input.N;
 
-    normal = input.N;
+    var normalSample = textureSample(normalTexture, textureSampler, input.uv).xyz;
+    normalSample = normalSample * 2.0 - 1.0;
+    let TBN = mat3x3f(input.T, input.B, input.N);
+    normal = normalize(TBN * normalSample);
+    
 
     let lambertFactor = max(dot(normalize(input.lightPos - input.pos.xyz), normal), 0.0);
     let lightingFactor = min(ambientFactor + visibility * lambertFactor, 1.0);
 
     var ambient = textureSample(texture, textureSampler, input.uv) * lightingFactor;
-    var specular = pow(max(dot(reflect(normalize(input.camDir), normal), normalize(input.lightPos)), 0.0), 100) * lightingFactor;
+    var specular = pow(max(dot(reflect(normalize(input.camDir), normal), normalize(input.lightPos)), 0.0), 32) * lightingFactor;
 
     let phong = reflect(-input.lightPos, normal);
 
     var output: FragmentOutput;
     output.pos = input.pos;
-    output.color = vec4f(ambient + specular);
+    output.color = vec4f(ambient + specular * specularFactor);
     output.normal = vec4f(normal, 1);
     //if(input.shadowPos.x < 0 || input.shadowPos.x > 1 || input.shadowPos.y < 0 || input.shadowPos.y > 1)
     //{

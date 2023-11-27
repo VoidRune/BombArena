@@ -51,7 +51,7 @@ export default class Arena
         this.tiles['#'] = wall;
         let floor = new Tile();
         floor.mesh = 1;
-        floor.texture = 0;
+        floor.texture = 1;
         this.tiles['_'] = floor;
         let tombstone = new Tile();
         tombstone.mesh = 2;
