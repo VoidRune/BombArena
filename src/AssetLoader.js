@@ -8,6 +8,21 @@ export async function loadTexture(url)
     return imageBitmap;
 }
 
+export async function loadImageRGBA(url) {
+    const imageBitmap = await loadTexture(url)
+    const canvas = document.getElementById("hiddenCanvas")
+    const ctx = canvas.getContext('2d')
+
+    canvas.width = imageBitmap.width
+    canvas.height = imageBitmap.height
+
+    ctx.drawImage(imageBitmap, 0, 0)
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+
+    return imageData.data
+}
+
 export class Vertex {
 
     constructor({
