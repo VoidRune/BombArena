@@ -15,6 +15,10 @@ export default class ResourceCache
         this.linearSampler = device.createSampler({
             magFilter: 'linear',
             minFilter: 'linear',
+            mipmapFilter: 'linear',
+
+            lodMinClamp: 0,
+            lodMaxClamp: 64,
         });
         this.materialBindGroups = [];
         this.materialBindLayout;

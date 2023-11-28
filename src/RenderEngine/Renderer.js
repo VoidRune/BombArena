@@ -2,7 +2,7 @@ import { vec3, mat4 } from '../Math/gl-matrix-module.js';
 
 import { createTexture } from './Device.js';
 
-import { loadTexture, loadMesh } from '../AssetLoader.js';
+import { loadTexture, loadImageRGBA, loadMesh } from '../AssetLoader.js';
 import FontGenerator from './FontGenerator.js';
 import ResourceCache from './ResourceCache.js';
 import ParticleSystem from './ParticleSystem.js';
@@ -240,7 +240,7 @@ export default class Renderer
             }],
         };
         
-        let fontImageData = await loadTexture('/res/font/DroidSansMono.png');
+        let fontImageData = await loadImageRGBA('/res/font/DroidSansMono.png');
         let font = createTexture(device, fontImageData, false);
     
         this.quadVertices = new Float32Array(this.fontGenerator.vert);
@@ -262,11 +262,17 @@ export default class Renderer
         let pointSampler = device.createSampler({
             magFilter: 'nearest',
             minFilter: 'nearest',
+
+            lodMinClamp: 1,
+            lodMaxClamp: 64,
         });
 
         let linearSampler = device.createSampler({
             magFilter: 'linear',
             minFilter: 'linear',
+
+            lodMinClamp: 1,
+            lodMaxClamp: 64,
         });
 
         /*
@@ -541,7 +547,7 @@ export default class Renderer
             }],
         });
 
-        let effectImageData = await loadTexture('/res/effects/effectAtlas.png');
+        let effectImageData = await loadImageRGBA('/res/effects/effectAtlas.png');
 
         let effectImage = device.createTexture({
             size: {

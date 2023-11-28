@@ -47,6 +47,7 @@ fn vertexMain( @builtin(vertex_index) Vid: u32, @builtin(instance_index) Iid: u3
 	var rotation: mat2x2<f32> = mat2x2<f32>(s,c,c,-s);
 
     var uv: vec2f = (OFFSETS[Vid].yx + 1.0) * 0.5;
+    uv.y = 1.0 - uv.y;
     var output: VertexOutput;
     output.texCoord.x = p.texCoord.x + (p.texCoord.z - p.texCoord.x) * uv.x;
     output.texCoord.y = p.texCoord.y + (p.texCoord.w - p.texCoord.y) * uv.y;

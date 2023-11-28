@@ -3,7 +3,7 @@
 export async function loadTexture(url)
 {
     const response = await fetch( new URL(url, import.meta.url).toString() );
-    const imageBitmap = await createImageBitmap(await response.blob() );
+    const imageBitmap = await createImageBitmap(await response.blob(), { imageOrientation: 'flipY' } );
 
     return imageBitmap;
 }
@@ -19,8 +19,8 @@ export async function loadImageRGBA(url) {
     ctx.drawImage(imageBitmap, 0, 0)
 
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-
-    return imageData.data
+    console.log(imageData);
+    return imageData
 }
 
 export class Vertex {

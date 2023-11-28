@@ -4,7 +4,7 @@ import { vec3, mat4 } from './Math/gl-matrix-module.js';
 import Renderer, { InstancedBatch, RenderData } from './RenderEngine/Renderer.js';
 import Input from './Input.js';
 import Camera from './RenderEngine/Camera.js';
-import { loadTexture, loadMesh } from './AssetLoader.js';
+import { loadImageRGBA, loadTexture, loadMesh } from './AssetLoader.js';
 import Arena from './Arena.js';
 import { Particle } from './RenderEngine/ParticleSystem.js';
 
@@ -61,15 +61,17 @@ export async function Init()
     dummyText.scale = 400;
     fontGenerator.addText(dummyText);
     
-    
     let wall = resourceCache.addMesh(await loadMesh('/res/meshes/wall.obj'));
     let floor = resourceCache.addMesh(await loadMesh('/res/meshes/floor.obj'));
     let tombstone = resourceCache.addMesh(await loadMesh('/res/meshes/tombstone.obj'));
     let obstacle = resourceCache.addMesh(await loadMesh('/res/meshes/obstacle.obj'));
     let torch = resourceCache.addMesh(await loadMesh('/res/meshes/torch.obj'));
     let environment = resourceCache.addMesh(await loadMesh('/res/meshes/environment.obj'));
-    let texture1 = resourceCache.addMaterial(await loadTexture('/res/textures/RockWall/albedo.png'), await loadTexture('/res/textures/RockWall/normal.png'));
-    let texture2 = resourceCache.addMaterial(await loadTexture('/res/textures/Sandstone/albedo.png'), await loadTexture('/res/textures/Sandstone/normal.png'));
+    //let texture1 = resourceCache.addMaterial(await loadTexture('/res/textures/RockWall/albedo.png'), await loadTexture('/res/textures/RockWall/normal.png'));
+    //let texture2 = resourceCache.addMaterial(await loadTexture('/res/textures/Sandstone/albedo.png'), await loadTexture('/res/textures/Sandstone/normal.png'));
+    
+    let texture1 = resourceCache.addMaterial(await loadImageRGBA('/res/textures/RockWall/albedo.png'), await loadImageRGBA('/res/textures/RockWall/normal.png'));
+    let texture2 = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Sandstone/albedo.png'), await loadImageRGBA('/res/textures/Sandstone/normal.png'));
     
     arenaEnvironmentBatch.setMesh(environment);
     arenaEnvironmentBatch.addInstance([0, 0, 0]);
@@ -105,7 +107,7 @@ export async function Init()
 
     powerUpEffect.position = [2, 2, 2];
     powerUpEffect.lifetime = 99999999;
-    powerUpEffect.texCoord = [0 / 8, 7 / 8, 1 / 8, 8 / 8];
+    powerUpEffect.texCoord = [0 / 8, 0 / 8, 1 / 8, 1 / 8];
     particleSystem.emit(0, powerUpEffect);
 
     /*glowEffect1.lifetime = 99999999;
@@ -256,7 +258,7 @@ export function RenderFrame()
     fire.rotationStart = Math.random() * 6.283;
     fire.rotationEnd = Math.random() * 6.283;
     let fireX = Math.floor(Math.random() * 4);
-    fire.texCoord = [fireX / 8, 0 / 8, (fireX + 1) / 8, 1 / 8];
+    fire.texCoord = [fireX / 8, 7 / 8, (fireX + 1) / 8, 8 / 8];
     fire.lifetime = Math.random() * 0.3 + 0.3;
     particleSystem.emit(time, fire);
     // If the key E is pressed down and a bomb has not yet exploded
@@ -300,7 +302,7 @@ export function RenderFrame()
     renderData.pushMatrix(cam.invViewMatrix);
     renderData.pushMatrix(cam.invProjectionMatrix);
     let lightPos = [10, 10, 10];
-    let ortho = mat4.ortho(mat4.create(), -16, 16, -16, 16, -20, 20);
+    let ortho = mat4.ortho(mat4.create(), -16, 16, -16, 16, -40, 40);
     ortho[5] *= -1;
     renderData.pushMatrix(mat4.multiply(mat4.create(), ortho, mat4.lookAt(mat4.create(), lightPos, [8, 0, 8], [0, -1, 0])));
     renderData.pushVec4(lightPos);
@@ -320,7 +322,7 @@ export function RenderFrame()
 function explosionEffect(position, time) {
     
         // Debree
-        for(let i = 0; i < 10; i++)
+        for(let i = 0; i < 5; i++)
         {
             let particle = new Particle();
             particle.position = [position[0], position[1], position[2]];
@@ -334,7 +336,7 @@ function explosionEffect(position, time) {
             particle.gravityStrength = 1.0;
             let xPar = Math.floor(Math.random() * 2);
             let yPar = Math.floor(Math.random() * 3);
-            particle.texCoord = [(14 + xPar) / 16, (2 + yPar) / 16, (15 + xPar) / 16, (3 + yPar) / 16];
+            particle.texCoord = [(14 + xPar) / 16, (11 + yPar) / 16, (15 + xPar) / 16, (12 + yPar) / 16];
             particle.lifetime = Math.random() * 1.5 + 0.5;
             particleSystem.emit(time, particle);
         }
@@ -352,7 +354,7 @@ function explosionEffect(position, time) {
             particle.rotationEnd = Math.random();
             particle.gravityStrength = 0.0;
             let xPar = Math.floor(Math.random() * 4);
-            particle.texCoord = [xPar / 8, 0 / 8, (xPar + 1) / 8, 1 / 8];
+            particle.texCoord = [xPar / 8, 7 / 8, (xPar + 1) / 8, 8 / 8];
             particle.lifetime = Math.random() * 0.5 + 0.8;
             particleSystem.emit(time, particle);
         }
@@ -370,7 +372,7 @@ function explosionEffect(position, time) {
             particle.rotationEnd = Math.random();
             particle.gravityStrength = 0.2;
             let xPar = Math.floor(Math.random() * 4);
-            particle.texCoord = [(xPar + 4) / 8, 0 / 8, (xPar + 5) / 8, 1 / 8];
+            particle.texCoord = [(xPar + 4) / 8, 7 / 8, (xPar + 5) / 8, 8 / 8];
             particle.lifetime = Math.random() * 0.3 + 0.1;
             particleSystem.emit(time, particle);
         }
@@ -385,7 +387,7 @@ function explosionEffect(position, time) {
         particle.colorEnd = [1, 0.631, 0];
         particle.rotationStart = Math.random() * 6.283;
         particle.rotationEnd = particle.rotationStart;
-        particle.texCoord = [6 / 8, 1 / 8, 7 / 8, 2 / 8];
+        particle.texCoord = [6 / 8, 6 / 8, 7 / 8, 7 / 8];
         particle.lifetime = 0.15;
         particleSystem.emit(time, particle);
 

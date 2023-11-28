@@ -65,6 +65,7 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput
     output.pos = input.pos;
     output.color = vec4f(ambient + specular * specularFactor);
     output.normal = vec4f(normal, 1);
+
     //if(input.shadowPos.x < 0 || input.shadowPos.x > 1 || input.shadowPos.y < 0 || input.shadowPos.y > 1)
     //{
     //    output.color = vec4f(1);
