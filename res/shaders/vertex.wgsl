@@ -6,7 +6,7 @@ struct CameraData {
     invView: mat4x4<f32>,
     invProjection: mat4x4<f32>,
     light: mat4x4<f32>,
-    lightPos: vec4<f32>,
+    lightDir: vec4<f32>,
 };
 
 @group(0) @binding(0) var<uniform> cam: CameraData;
@@ -19,7 +19,7 @@ struct VertexOutput {
     @location(3) B: vec3f,
     @location(4) N: vec3f,
     @location(5) shadowPos: vec3f,
-    @location(6) lightPos: vec3f,
+    @location(6) lightDir: vec3f,
     @location(7) camDir: vec3f,
 
     @builtin(position) position: vec4f,
@@ -50,7 +50,7 @@ fn vertexMain(
     posFromLight.xy * vec2(0.5, -0.5) + vec2(0.5),
     posFromLight.z
     );
-    output.lightPos = cam.lightPos.xyz;
+    output.lightDir = cam.lightDir.xyz;
     output.camDir = output.pos.xyz - vec3f(cam.invView[3][0], cam.invView[3][1], cam.invView[3][2]);
     return output;
 }

@@ -5,7 +5,7 @@ struct FragmentInput {
     @location(3) B: vec3f,
     @location(4) N: vec3f,
     @location(5) shadowPos: vec3f,
-    @location(6) lightPos: vec3f,
+    @location(6) lightDir: vec3f,
     @location(7) camDir: vec3f,
 };
 
@@ -23,8 +23,8 @@ struct FragmentOutput {
     @location(2) normal: vec4f,
 };
 
-const ambientFactor = 0.2;
-const specularFactor = 0.2;
+const ambientFactor = 0.5;
+const specularFactor = 1.0;
 
 @fragment
 fn fragmentMain(input: FragmentInput) -> FragmentOutput
@@ -53,13 +53,13 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput
     normal = normalize(TBN * normalSample);
     
 
-    let lambertFactor = max(dot(normalize(input.lightPos - input.pos.xyz), normal), 0.0);
+    let lambertFactor = max(dot(normalize(-input.lightDir), normal), 0.0);
     let lightingFactor = min(ambientFactor + visibility * lambertFactor, 1.0);
 
     var ambient = textureSample(texture, textureSampler, input.uv) * lightingFactor;
-    var specular = pow(max(dot(reflect(normalize(input.camDir), normal), normalize(input.lightPos)), 0.0), 32) * lightingFactor;
+    var specular = pow(max(dot(reflect(normalize(input.camDir), normal), normalize(-input.lightDir)), 0.0), 32) * lightingFactor;
 
-    let phong = reflect(-input.lightPos, normal);
+    let phong = reflect(input.lightDir, normal);
 
     var output: FragmentOutput;
     output.pos = input.pos;

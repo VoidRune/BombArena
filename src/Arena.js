@@ -22,23 +22,41 @@ export default class Arena
     constructor(){
         this.batches = {};
 
-        this.arenaData = [
+        this.arenaForegroundData = [
             [ '#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#' ],
-            [ '#','_','_','_','_','O','_','_','_','_','_','_','_','_','_','#' ],
-            [ '#','_','#','_','#','O','_','#','#','_','_','#','_','#','_','#' ],
-            [ '#','_','_','_','_','_','#','O','O','#','_','_','_','_','_','#' ],
-            [ '#','_','#','_','#','_','_','_','_','_','_','#','_','#','_','#' ],
-            [ '#','_','_','_','_','_','T','_','_','#','_','_','_','_','_','#' ],
-            [ '#','_','_','T','_','T','T','_','_','#','#','_','T','_','_','#' ],
-            [ '#','_','#','O','_','_','_','I','_','_','_','_','_','#','_','#' ],
-            [ '#','_','#','_','_','_','_','_','_','_','_','_','_','#','_','#' ],
-            [ '#','_','O','T','_','#','#','_','_','T','T','_','T','_','_','#' ],
-            [ '#','_','O','_','_','_','#','_','_','T','_','_','_','_','_','#' ],
-            [ '#','_','#','O','#','_','_','_','_','_','_','#','_','#','_','#' ],
-            [ '#','_','_','_','_','_','#','_','_','#','_','_','_','_','_','#' ],
-            [ '#','_','#','_','#','_','_','#','#','_','_','#','_','#','_','#' ],
-            [ '#','_','_','_','_','_','_','_','_','_','_','_','_','_','_','#' ],
+            [ '#',' ',' ',' ',' ','O',' ',' ',' ',' ',' ',' ',' ',' ',' ','#' ],
+            [ '#',' ','#',' ','#','O',' ','#','#',' ',' ','#',' ','#',' ','#' ],
+            [ '#',' ',' ',' ',' ',' ','#','O','O','#',' ',' ',' ',' ',' ','#' ],
+            [ '#',' ','#',' ','#',' ',' ',' ',' ',' ',' ','#',' ','#',' ','#' ],
+            [ '#',' ',' ',' ',' ',' ','T',' ',' ','#',' ',' ',' ',' ',' ','#' ],
+            [ '#',' ',' ','T',' ','T','T',' ',' ','#','#',' ','T',' ',' ','#' ],
+            [ '#',' ','#','O',' ',' ',' ','I',' ',' ',' ',' ',' ','#',' ','#' ],
+            [ '#',' ','#',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#',' ','#' ],
+            [ '#',' ','O','T','C',' ',' ',' ',' ','T','T',' ','T',' ',' ','#' ],
+            [ '#',' ','O',' ',' ',' ',' ',' ',' ','T',' ',' ',' ',' ',' ','#' ],
+            [ '#',' ','#','O',' ','F','C','F','C',' ',' ','#',' ','#',' ','#' ],
+            [ '#',' ',' ',' ',' ',' ','#',' ',' ','#',' ',' ',' ',' ',' ','#' ],
+            [ '#',' ','#',' ','#',' ',' ','#','#',' ',' ','#',' ','#',' ','#' ],
+            [ '#',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#' ],
             [ '#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#' ]];
+
+        this.arenaBackgroundData = [
+            [ ' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ' ],
+            [ ' ','_','_','_','_','_','_','_','_','_','_','_','_','_','_',' ' ],
+            [ ' ','_',' ','_',' ','_','_',' ',' ','_','_',' ','_',' ','_',' ' ],
+            [ ' ','_','_','_','_','_',' ','_','_',' ','_','_','_','_','_',' ' ],
+            [ ' ','_',' ','_',' ','_','_','_','_','_','_',' ','_',' ','_',' ' ],
+            [ ' ','_','_','_','_','_','_','_','_',' ','_','_','_','_','_',' ' ],
+            [ ' ','_','_','_','_','_','_','_','_',' ',' ','_','_','_','_',' ' ],
+            [ ' ','_',' ','_','_','_','_',' ','_','_','_','_','_',' ','_',' ' ],
+            [ ' ','_',' ','_','_','_','_','_','_','_','_','_','_',' ','_',' ' ],
+            [ ' ','_','_','_','_','_','_','_','_','_','_','_','_','_','_',' ' ],
+            [ ' ','_','_','_','_','_','_','_','_','_','_','_','_','_','_',' ' ],
+            [ ' ','_',' ','_','_','_','_','_','_','_','_',' ','_',' ','_',' ' ],
+            [ ' ','_','_','_','_','_',' ','_','_',' ','_','_','_','_','_',' ' ],
+            [ ' ','_',' ','_',' ','_','_',' ',' ','_','_',' ','_',' ','_',' ' ],
+            [ ' ','_','_','_','_','_','_','_','_','_','_','_','_','_','_',' ' ],
+            [ ' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ' ]];
         this.arenaChanged = false;
 
 
@@ -55,19 +73,29 @@ export default class Arena
         this.tiles['_'] = floor;
         let tombstone = new Tile();
         tombstone.mesh = 2;
-        tombstone.texture = 1;
+        tombstone.texture = 2;
         tombstone.collider = [0.2, 0.2, 0.8, 0.8];
         this.tiles['T'] = tombstone;
-        let obstacle = new Tile();
-        obstacle.mesh = 3;
-        obstacle.texture = 1;
-        obstacle.collider = [0, 0, 0.5, 0.5, 0.5, 0.5, 1, 1];
-        this.tiles['O'] = obstacle;
+        let barrel = new Tile();
+        barrel.mesh = 3;
+        barrel.texture = 3;
+        barrel.collider = [0, 0, 1, 1];
+        this.tiles['O'] = barrel;
         let torch = new Tile();
         torch.mesh = 4;
         torch.texture = 1;
         torch.collider = [0.4, 0.4, 0.6, 0.6];
         this.tiles['I'] = torch;
+        let couldron = new Tile();
+        couldron.mesh = 5;
+        couldron.texture = 4;
+        couldron.collider = [0.2, 0.2, 0.8, 0.8];
+        this.tiles['C'] = couldron;
+        let fireplace = new Tile();
+        fireplace.mesh = 6;
+        fireplace.texture = 5;
+        fireplace.collider = [0, 0, 1, 1];
+        this.tiles['F'] = fireplace;
         this.buildArena();
     }
 
@@ -90,7 +118,11 @@ export default class Arena
         {
             for (vCell[0] = vAreaTL[0]; vCell[0] <= vAreaBR[0]; vCell[0]++)
             {
-                let colliders = this.tiles[this.arenaData[vCell[1]][vCell[0]]].collider;
+                let tile = this.arenaForegroundData[vCell[1]][vCell[0]];
+                if(this.tiles[tile] == undefined)
+                    continue;
+
+                let colliders = this.tiles[tile].collider;
                 if (colliders.length != 0)
                 {
                     for(let i = 0; i < colliders.length; i+=4)
@@ -118,12 +150,12 @@ export default class Arena
 
     getTile(x, y)
     {
-        return this.arenaData[y][x];
+        return this.arenaForegroundData[y][x];
     }
 
     setTile(x, y, newTile)
     {
-        this.arenaData[y][x] = newTile;
+        this.arenaForegroundData[y][x] = newTile;
         this.arenaChanged = true;
     }
 
@@ -137,12 +169,21 @@ export default class Arena
             value.reset();
         }
 
-        for(let y = 0; y < this.arenaData.length; y++)
+        for(let y = 0; y < this.arenaForegroundData.length; y++)
         {
-            for(let x = 0; x < this.arenaData[y].length; x++)
+            for(let x = 0; x < this.arenaForegroundData[y].length; x++)
             {
-                let tile = this.arenaData[y][x];
-                this.batches[tile].addInstance([x, 0, y]);          
+                let tile1 = this.arenaForegroundData[y][x];
+                let tile2 = this.arenaBackgroundData[y][x];
+
+                if(this.tiles[tile1] != undefined)
+                {
+                    this.batches[tile1].addInstance([x, 0, y]);
+                }    
+                if(this.tiles[tile2] != undefined)
+                {
+                    this.batches[tile2].addInstance([x, 0, y]);
+                }    
             }
         }
     }
@@ -151,23 +192,42 @@ export default class Arena
     {
         this.batches = {};
 
-        for(let y = 0; y < this.arenaData.length; y++)
+        for(let y = 0; y < this.arenaForegroundData.length; y++)
         {
-            for(let x = 0; x < this.arenaData[y].length; x++)
+            for(let x = 0; x < this.arenaForegroundData[y].length; x++)
             {
-                let tile = this.arenaData[y][x];
+                let tile1 = this.arenaForegroundData[y][x];
+                let tile2 = this.arenaBackgroundData[y][x];
 
-                if(this.batches[tile] === undefined)
+                if(this.tiles[tile1] != undefined)
                 {
-                    let batch = new InstancedBatch();
-                    let t = this.tiles[tile];
-                    batch.mesh = t.mesh;
-                    batch.texture = t.texture;
+                    if(this.batches[tile1] === undefined)
+                    {
+                        let batch = new InstancedBatch();
+                        let t = this.tiles[tile1];
+                        batch.mesh = t.mesh;
+                        batch.texture = t.texture;
+                        
+                        this.batches[tile1] = batch;
+                    }
                     
-                    this.batches[tile] = batch;
+                    this.batches[tile1].addInstance([x, 0, y]);
                 }
 
-                this.batches[tile].addInstance([x, 0, y]);          
+                if(this.tiles[tile2] != undefined)
+                {
+                    if(this.batches[tile2] === undefined)
+                    {
+                        let batch = new InstancedBatch();
+                        let t = this.tiles[tile2];
+                        batch.mesh = t.mesh;
+                        batch.texture = t.texture;
+                        
+                        this.batches[tile2] = batch;
+                    }
+
+                    this.batches[tile2].addInstance([x, 0, y]);
+                }
             }
         }
     }

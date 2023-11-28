@@ -40,8 +40,8 @@ let powerUpEffect = new Particle();
 const arena = new Arena();
 
 let player1Pos = [1.5, 0, 1.5]
-let player2Pos = [arena.arenaData.length - 1.5, 0, arena.arenaData[0].length -1.5]
-console.log(arena.arenaData)
+let player2Pos = [arena.arenaForegroundData.length - 1.5, 0, arena.arenaForegroundData[0].length -1.5]
+console.log(arena.arenaForegroundData)
 console.log(player2Pos)
 
 let dummyText;
@@ -64,15 +64,20 @@ export async function Init()
     let wall = resourceCache.addMesh(await loadMesh('/res/meshes/wall.obj'));
     let floor = resourceCache.addMesh(await loadMesh('/res/meshes/floor.obj'));
     let tombstone = resourceCache.addMesh(await loadMesh('/res/meshes/tombstone.obj'));
-    let obstacle = resourceCache.addMesh(await loadMesh('/res/meshes/obstacle.obj'));
+    let barrel = resourceCache.addMesh(await loadMesh('/res/meshes/barrel.obj'));
     let torch = resourceCache.addMesh(await loadMesh('/res/meshes/torch.obj'));
+    let couldron = resourceCache.addMesh(await loadMesh('/res/meshes/couldron.obj'));
+    let fireplace = resourceCache.addMesh(await loadMesh('/res/meshes/fireplace.obj'));
+
     let environment = resourceCache.addMesh(await loadMesh('/res/meshes/environment.obj'));
-    //let texture1 = resourceCache.addMaterial(await loadTexture('/res/textures/RockWall/albedo.png'), await loadTexture('/res/textures/RockWall/normal.png'));
-    //let texture2 = resourceCache.addMaterial(await loadTexture('/res/textures/Sandstone/albedo.png'), await loadTexture('/res/textures/Sandstone/normal.png'));
-    
-    let texture1 = resourceCache.addMaterial(await loadImageRGBA('/res/textures/RockWall/albedo.png'), await loadImageRGBA('/res/textures/RockWall/normal.png'));
-    let texture2 = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Sandstone/albedo.png'), await loadImageRGBA('/res/textures/Sandstone/normal.png'));
-    
+
+    let texture1 = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Sandstone/albedo.png'), await loadImageRGBA('/res/textures/Sandstone/normal.png'));
+    let texture2 = resourceCache.addMaterial(await loadImageRGBA('/res/textures/GreyStone/albedo.png'), await loadImageRGBA('/res/textures/GreyStone/normal.png'));
+    let texture3 = resourceCache.addMaterial(await loadImageRGBA('/res/textures/JapaneseWall/albedo.png'), await loadImageRGBA('/res/textures/JapaneseWall/normal.png'));
+    let texture4 = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Barrel/albedo.png'), await loadImageRGBA('/res/textures/Barrel/normal.png'));
+    let texture5 = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Couldron/albedo.png'), await loadImageRGBA('/res/textures/Couldron/normal.png'));
+    let texture6 = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Fireplace/albedo.png'), await loadImageRGBA('/res/textures/Fireplace/normal.png'));
+
     arenaEnvironmentBatch.setMesh(environment);
     arenaEnvironmentBatch.addInstance([0, 0, 0]);
     
@@ -97,12 +102,6 @@ export async function Init()
 
     batches.push(player1Batch);
     batches.push(player2Batch)
-
-    let teapot = resourceCache.addMesh(await loadMesh('res/meshes/teapot.obj'));
-    var batchTeapot = new InstancedBatch();
-    batchTeapot.setMesh(teapot);
-    batchTeapot.addInstance([-15, 10, 10]);
-    batches.push(batchTeapot);
 
 
     powerUpEffect.position = [2, 2, 2];
@@ -143,27 +142,25 @@ function explodeBomb(coords, radius, time) {
             let newX = x + dx * i;
             let newY = y + dy * i;
 
-            if (newX < 0 || newX >= arena.arenaData.length ||
-                newY < 0 || newY >= arena.arenaData[newX].length) {
+            if (newX < 0 || newX >= arena.arenaForegroundData.length ||
+                newY < 0 || newY >= arena.arenaForegroundData[newX].length) {
                 break
             }
 
             let t = arena.getTile(newX, newY);
 
-            if (t === '#') {
-                break
-            }
-            else if (t === 'T') {
-                arena.setTile(newX, newY, '_');
+            if (t === 'T') {
+                arena.setTile(newX, newY, ' ');
                 dirty = true;
                 explosionEffect([newX + 0.5, 0.5, newY + 0.5], time)
                 break
             }
-            else if (t === '_') {
+            else if (t === ' ') {
                 explosionEffect([newX + 0.5, 0.5, newY + 0.5], time)
 
                 continue
             }
+            break
         }
     }
 
@@ -301,11 +298,13 @@ export function RenderFrame()
     renderData.pushMatrix(cam.projectionMatrix);
     renderData.pushMatrix(cam.invViewMatrix);
     renderData.pushMatrix(cam.invProjectionMatrix);
-    let lightPos = [10, 10, 10];
+    let lightPos = [10, 10, 8 + Math.sin(time * 2) * 2];
+    let lightCenter = [8, 0, 8];
+    let lightDirection = [lightCenter[0] - lightPos[0], lightCenter[1] - lightPos[1], lightCenter[2] - lightPos[2]];
     let ortho = mat4.ortho(mat4.create(), -16, 16, -16, 16, -40, 40);
     ortho[5] *= -1;
-    renderData.pushMatrix(mat4.multiply(mat4.create(), ortho, mat4.lookAt(mat4.create(), lightPos, [8, 0, 8], [0, -1, 0])));
-    renderData.pushVec4(lightPos);
+    renderData.pushMatrix(mat4.multiply(mat4.create(), ortho, mat4.lookAt(mat4.create(), lightPos, lightCenter, [0, -1, 0])));
+    renderData.pushVec4(lightDirection);
     let uiMatrix = mat4.ortho(mat4.create(), 0, canvas.width, 0, canvas.height, -10, 10);
     renderData.pushMatrix(uiMatrix);
 
