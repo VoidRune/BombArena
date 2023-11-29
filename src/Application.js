@@ -200,11 +200,15 @@ export function RenderFrame()
     if (input.keys['KeyW']) { velocity1[2] += 1; }
     if (input.keys['KeyS']) { velocity1[2] -= 1; }
     
-    let angle1 = -90 + Math.atan2(-velocity1[2], velocity1[0]) * 180 / 3.1415;
+    let angle1 = Math.atan2(-velocity1[2], velocity1[0]) * 180 / Math.PI - 90;
     if (velocity1[0] != 0 || velocity1[2] != 0)
     {
-        lastAngle1 += (angle1 - lastAngle1) * 0.1;
+        angle1 = (angle1 + 180) % 360 - 180;
+
+        let deltaAngle = ((angle1 - lastAngle1 + 540) % 360) - 180;
+        lastAngle1 += deltaAngle * 0.1;
     }
+
 
     vec3.normalize(velocity1, velocity1);
     vec3.scale(velocity1, velocity1, movementSpeed * dt);
@@ -218,12 +222,14 @@ export function RenderFrame()
     if (input.keys['ArrowDown']) { velocity2[2] -= 1; }
 
     
-    let angle2 = -90 + Math.atan2(-velocity2[2], velocity2[0]) * 180 / 3.1415;
-    if (velocity2[0] === 0 && velocity2[2] === 0)
+    let angle2 = Math.atan2(-velocity2[2], velocity2[0]) * 180 / Math.PI - 90;
+    if (velocity2[0] != 0 || velocity2[2] != 0)
     {
-        angle2 = lastAngle2;
+        angle2 = (angle2 + 180) % 360 - 180;
+
+        let deltaAngle = ((angle2 - lastAngle2 + 540) % 360) - 180;
+        lastAngle2 += deltaAngle * 0.1;
     }
-    lastAngle2 = angle2;
     vec3.normalize(velocity2, velocity2);
     vec3.scale(velocity2, velocity2, movementSpeed * dt);
     
@@ -283,7 +289,7 @@ export function RenderFrame()
     //player1Batch.reset();
     //player1Batch.addInstance([cam.position[0], 1, 1]);
     player1Batch.updateInstance(0, player1Pos, [0, lastAngle1, 0]);
-    player2Batch.updateInstance(0, player2Pos, [0, angle2, 0]);
+    player2Batch.updateInstance(0, player2Pos, [0, lastAngle2, 0]);
 
     // Camera in the average position between the two players
     // Offset scaled by their distance

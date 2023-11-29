@@ -11,7 +11,7 @@ export async function loadTexture(url)
 export async function loadImageRGBA(url) {
     const imageBitmap = await loadTexture(url)
     const canvas = document.getElementById("hiddenCanvas")
-    const ctx = canvas.getContext('2d')
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })
 
     canvas.width = imageBitmap.width
     canvas.height = imageBitmap.height
