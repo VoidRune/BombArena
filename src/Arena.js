@@ -1,5 +1,5 @@
 import Renderer, { InstancedBatch, RenderData } from './RenderEngine/Renderer.js';
-import { loadTexture, loadMesh } from './AssetLoader.js';
+import { loadImageRGBA, loadTexture, loadMesh } from './AssetLoader.js';
 
 import { vec2, vec3 } from './Math/gl-matrix-module.js';
 
@@ -21,6 +21,8 @@ export default class Arena
 {
     constructor(){
         this.batches = {};
+        this.tiles = {};
+        this.arenaChanged = false;
 
         this.arenaForegroundData = [
             [ '#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#' ],
@@ -57,43 +59,60 @@ export default class Arena
             [ ' ','_',' ','_',' ','_','_',' ',' ','_','_',' ','_',' ','_',' ' ],
             [ ' ','_','_','_','_','_','_','_','_','_','_','_','_','_','_',' ' ],
             [ ' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ' ]];
-        this.arenaChanged = false;
+    }
 
+    async Initialize(resourceCache)
+    {
 
-        this.tiles = {};
+        let wallMesh = resourceCache.addMesh(await loadMesh('/res/meshes/wall.obj'));
+        let floorMesh = resourceCache.addMesh(await loadMesh('/res/meshes/floor.obj'));
+        let tombstoneMesh = resourceCache.addMesh(await loadMesh('/res/meshes/tombstone.obj'));
+        let barrelMesh = resourceCache.addMesh(await loadMesh('/res/meshes/barrel.obj'));
+        let torchMesh = resourceCache.addMesh(await loadMesh('/res/meshes/torch.obj'));
+        let couldronMesh = resourceCache.addMesh(await loadMesh('/res/meshes/couldron.obj'));
+        let fireplaceMesh = resourceCache.addMesh(await loadMesh('/res/meshes/fireplace.obj'));
+        
+        let sandstone = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Sandstone/albedo.png'), await loadImageRGBA('/res/textures/Sandstone/normal.png'));
+        let greystone = resourceCache.addMaterial(await loadImageRGBA('/res/textures/GreyStone/albedo.png'), await loadImageRGBA('/res/textures/GreyStone/normal.png'));
+        let japanesewall = resourceCache.addMaterial(await loadImageRGBA('/res/textures/JapaneseWall/albedo.png'), await loadImageRGBA('/res/textures/JapaneseWall/normal.png'));
+        let barrelTexture = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Barrel/albedo.png'), await loadImageRGBA('/res/textures/Barrel/normal.png'));
+        let couldronTexture = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Couldron/albedo.png'), await loadImageRGBA('/res/textures/Couldron/normal.png'));
+        let fireplaceTexture = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Fireplace/albedo.png'), await loadImageRGBA('/res/textures/Fireplace/normal.png'));
+    
+
 
         let wall = new Tile();
-        wall.mesh = 0;
-        wall.texture = 0;
+        wall.mesh = wallMesh;
+        wall.texture = sandstone;
         wall.collider = [0, 0, 1, 1];
         this.tiles['#'] = wall;
         let floor = new Tile();
-        floor.mesh = 1;
-        floor.texture = 1;
+        floor.mesh = floorMesh;
+        floor.texture = greystone;
         this.tiles['_'] = floor;
         let tombstone = new Tile();
-        tombstone.mesh = 2;
-        tombstone.texture = 2;
+        tombstone.mesh = tombstoneMesh;
+        tombstone.texture = greystone;
         tombstone.collider = [0.2, 0.2, 0.8, 0.8];
         this.tiles['T'] = tombstone;
         let barrel = new Tile();
-        barrel.mesh = 3;
-        barrel.texture = 3;
+        barrel.mesh = barrelMesh;
+        barrel.texture = barrelTexture;
         barrel.collider = [0, 0, 1, 1];
         this.tiles['O'] = barrel;
         let torch = new Tile();
-        torch.mesh = 4;
-        torch.texture = 1;
+        torch.mesh = torchMesh;
+        torch.texture = japanesewall;
         torch.collider = [0.4, 0.4, 0.6, 0.6];
         this.tiles['I'] = torch;
         let couldron = new Tile();
-        couldron.mesh = 5;
-        couldron.texture = 4;
+        couldron.mesh = couldronMesh;
+        couldron.texture = couldronTexture;
         couldron.collider = [0.2, 0.2, 0.8, 0.8];
         this.tiles['C'] = couldron;
         let fireplace = new Tile();
-        fireplace.mesh = 6;
-        fireplace.texture = 5;
+        fireplace.mesh = fireplaceMesh;
+        fireplace.texture = fireplaceTexture;
         fireplace.collider = [0, 0, 1, 1];
         this.tiles['F'] = fireplace;
         this.buildArena();

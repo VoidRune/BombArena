@@ -22,6 +22,7 @@ canvas.height = window.innerHeight;
 var renderer = new Renderer(device, canvas, context);
 var particleSystem;
 var fontGenerator;
+var resourceCache;
 
 var input = new Input(canvas);
 var cam = new Camera(canvas, input);
@@ -41,19 +42,21 @@ const arena = new Arena();
 
 let player1Pos = [1.5, 0, 1.5]
 let player2Pos = [arena.arenaForegroundData.length - 1.5, 0, arena.arenaForegroundData[0].length -1.5]
-console.log(arena.arenaForegroundData)
-console.log(player2Pos)
+let lastAngle1 = 0
+let lastAngle2 = 0
 
 let dummyText;
 
 export async function Init()
 {
-    let resourceCache = renderer.resourceCache;
+    resourceCache = renderer.resourceCache;
     fontGenerator = renderer.fontGenerator;
     particleSystem = renderer.particleSystem;
 
     await renderer.Initialize();
     
+    await arena.Initialize(resourceCache);
+
     dummyText = new Text();
     dummyText.string = "Omegalul";
     dummyText.position = [20, canvas.height];
@@ -61,29 +64,11 @@ export async function Init()
     dummyText.scale = 400;
     fontGenerator.addText(dummyText);
     
-    let wall = resourceCache.addMesh(await loadMesh('/res/meshes/wall.obj'));
-    let floor = resourceCache.addMesh(await loadMesh('/res/meshes/floor.obj'));
-    let tombstone = resourceCache.addMesh(await loadMesh('/res/meshes/tombstone.obj'));
-    let barrel = resourceCache.addMesh(await loadMesh('/res/meshes/barrel.obj'));
-    let torch = resourceCache.addMesh(await loadMesh('/res/meshes/torch.obj'));
-    let couldron = resourceCache.addMesh(await loadMesh('/res/meshes/couldron.obj'));
-    let fireplace = resourceCache.addMesh(await loadMesh('/res/meshes/fireplace.obj'));
-
     let environment = resourceCache.addMesh(await loadMesh('/res/meshes/environment.obj'));
-
-    let texture1 = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Sandstone/albedo.png'), await loadImageRGBA('/res/textures/Sandstone/normal.png'));
-    let texture2 = resourceCache.addMaterial(await loadImageRGBA('/res/textures/GreyStone/albedo.png'), await loadImageRGBA('/res/textures/GreyStone/normal.png'));
-    let texture3 = resourceCache.addMaterial(await loadImageRGBA('/res/textures/JapaneseWall/albedo.png'), await loadImageRGBA('/res/textures/JapaneseWall/normal.png'));
-    let texture4 = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Barrel/albedo.png'), await loadImageRGBA('/res/textures/Barrel/normal.png'));
-    let texture5 = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Couldron/albedo.png'), await loadImageRGBA('/res/textures/Couldron/normal.png'));
-    let texture6 = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Fireplace/albedo.png'), await loadImageRGBA('/res/textures/Fireplace/normal.png'));
 
     arenaEnvironmentBatch.setMesh(environment);
     arenaEnvironmentBatch.addInstance([0, 0, 0]);
     
-    //batches.push(arenaWallBatch);
-    //batches.push(arenaFloorBatch);
-    //batches.push(arenaTombstoneBatch);
     batches.push(arenaEnvironmentBatch);
     for (const [key, value] of Object.entries(arena.batches)) 
     {
@@ -91,13 +76,16 @@ export async function Init()
     }
 
     // Initialize player meshes, textures and positions
-    let cylinder = resourceCache.addMesh(await loadMesh('res/meshes/cylinder.obj'));
-    player1Batch.setMesh(cylinder);
-    player1Batch.setTexture(0)
+    let crewmate = resourceCache.addMesh(await loadMesh('res/meshes/crewmate.obj'));
+    let redCrewmate = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Crewmate/albedo1.png'), await loadImageRGBA('/res/textures/Crewmate/normal.png'));
+    let blueCrewmate = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Crewmate/albedo2.png'), await loadImageRGBA('/res/textures/Crewmate/normal.png'));
+
+    player1Batch.setMesh(crewmate);
+    player1Batch.setTexture(redCrewmate)
     player1Batch.addInstance([0, 0, 0]);
 
-    player2Batch.setMesh(cylinder);
-    player2Batch.setTexture(1)
+    player2Batch.setMesh(crewmate);
+    player2Batch.setTexture(blueCrewmate)
     player2Batch.addInstance([0, 0, 0]);
 
     batches.push(player1Batch);
@@ -195,6 +183,9 @@ function HSVtoRGB(h, s, v) {
 
 export function RenderFrame()
 {
+    //canvas.width  = window.innerWidth;
+    //canvas.height = window.innerHeight;
+
     let time = performance.now() / 1000;
     let dt = time - lastTime;
     lastTime = time;
@@ -203,12 +194,18 @@ export function RenderFrame()
 
     let movementSpeed = 2.5;
     let velocity1 = [0, 0, 0];
+
     if (input.keys['KeyD']) { velocity1[0] += 1; }
     if (input.keys['KeyA']) { velocity1[0] -= 1; }
     if (input.keys['KeyW']) { velocity1[2] += 1; }
     if (input.keys['KeyS']) { velocity1[2] -= 1; }
-
     
+    let angle1 = -90 + Math.atan2(-velocity1[2], velocity1[0]) * 180 / 3.1415;
+    if (velocity1[0] != 0 || velocity1[2] != 0)
+    {
+        lastAngle1 += (angle1 - lastAngle1) * 0.1;
+    }
+
     vec3.normalize(velocity1, velocity1);
     vec3.scale(velocity1, velocity1, movementSpeed * dt);
     
@@ -221,12 +218,18 @@ export function RenderFrame()
     if (input.keys['ArrowDown']) { velocity2[2] -= 1; }
 
     
+    let angle2 = -90 + Math.atan2(-velocity2[2], velocity2[0]) * 180 / 3.1415;
+    if (velocity2[0] === 0 && velocity2[2] === 0)
+    {
+        angle2 = lastAngle2;
+    }
+    lastAngle2 = angle2;
     vec3.normalize(velocity2, velocity2);
     vec3.scale(velocity2, velocity2, movementSpeed * dt);
     
     arena.collideCircle(player2Pos, velocity2, 0.4);
 
-    dummyText.string = "Omegalul time is running out: " + time.toFixed(2);
+    dummyText.string = "Current time: " + time.toFixed(2);
     dummyText.color = HSVtoRGB(time * 0.1, 1.0, 1.0);
 
     powerUpEffect.position = [1.5, 0.4 + Math.sin(time * 1.5) * 0.2, 5.5];
@@ -279,8 +282,8 @@ export function RenderFrame()
     }
     //player1Batch.reset();
     //player1Batch.addInstance([cam.position[0], 1, 1]);
-    player1Batch.updateInstance(0, player1Pos);
-    player2Batch.updateInstance(0, player2Pos)
+    player1Batch.updateInstance(0, player1Pos, [0, lastAngle1, 0]);
+    player2Batch.updateInstance(0, player2Pos, [0, angle2, 0]);
 
     // Camera in the average position between the two players
     // Offset scaled by their distance

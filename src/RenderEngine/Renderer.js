@@ -1,4 +1,4 @@
-import { vec3, mat4 } from '../Math/gl-matrix-module.js';
+import { quat, vec3, mat4 } from '../Math/gl-matrix-module.js';
 
 import { createTexture } from './Device.js';
 
@@ -35,9 +35,10 @@ export class InstancedBatch
         this.dirty = true;
     }
 
-    updateInstance(id, p)
+    updateInstance(id, p, r)
     {
         mat4.fromTranslation(this.transforms.subarray(16 * id, 16 * (id + 1)), vec3.fromValues(p[0], p[1], p[2]));
+        mat4.fromRotationTranslation(this.transforms.subarray(16 * id, 16 * (id + 1)), quat.fromEuler(quat.create(), r[0], r[1], r[2]), vec3.fromValues(p[0], p[1], p[2]));
         this.dirty = true;
     }
 

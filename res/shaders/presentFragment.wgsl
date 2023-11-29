@@ -59,7 +59,7 @@ struct CameraData {
 	var sampleCount: f32 = 32.0;
 	var dtUv = (endUv - startUv) / sampleCount;
 	var dtView = (endView - startView) / sampleCount;
-	var stepLen = sampleCount * length(dtView);
+	var stepLen = 2 * sampleCount * length(dtView);
 	var currUv = startUv;
 	var currPos = startView;
 
