@@ -301,16 +301,19 @@ export function RenderFrame()
     distanceOfPositions = Math.sqrt(distanceOfPositions)
 
     cam.updatePosition(averagePosition, distanceOfPositions)
+    console.log(averagePosition, distanceOfPositions);
 
     renderData.reset();
     renderData.pushMatrix(cam.viewMatrix);
     renderData.pushMatrix(cam.projectionMatrix);
     renderData.pushMatrix(cam.invViewMatrix);
     renderData.pushMatrix(cam.invProjectionMatrix);
-    let lightPos = [10, 10, 8 + Math.sin(time * 2) * 2];
-    let lightCenter = [8, 0, 8];
+    let lightPos = [averagePosition[0] + 2, 10, averagePosition[2] + Math.sin(time) * 2];
+    let lightCenter = averagePosition;
     let lightDirection = [lightCenter[0] - lightPos[0], lightCenter[1] - lightPos[1], lightCenter[2] - lightPos[2]];
-    let ortho = mat4.ortho(mat4.create(), -16, 16, -16, 16, -40, 40);
+    let halfDist = distanceOfPositions * 0.5 + 8;
+    let ortho = mat4.ortho(mat4.create(), -halfDist, halfDist, -halfDist, halfDist, -40, 40);
+
     ortho[5] *= -1;
     renderData.pushMatrix(mat4.multiply(mat4.create(), ortho, mat4.lookAt(mat4.create(), lightPos, lightCenter, [0, -1, 0])));
     renderData.pushVec4(lightDirection);

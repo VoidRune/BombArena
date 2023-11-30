@@ -20,7 +20,6 @@ struct CameraData {
 @fragment
 @diagnostic(off,derivative_uniformity) fn fragmentMain(input: FragmentInput) -> @location(0) vec4f 
 {
-	var view = cam.view;
     var position = textureSample(positionAttachment, mySampler, input.uv);
     var color = textureSample(colorAttachment, mySampler, input.uv);
     var normal = textureSample(normalAttachment, mySampler, input.uv);
@@ -32,12 +31,11 @@ struct CameraData {
 	//	reflectivity = 0.4 * (1 - overlay.a) * (1 - overlay.a);
 	//}
 
-	//return overlay.aaaa;
-	
     if (reflectivity < 0.005)
     {
 		return outColor;
 	}
+
 
     var rayOrigin = vec3f(cam.invView[3][0], cam.invView[3][1], cam.invView[3][2]);
 	var rayDirection = position.xyz - rayOrigin;
@@ -48,6 +46,8 @@ struct CameraData {
 
 	var startView = vec4f(position.xyz, 1);
 	var endView   = vec4f(position.xyz + (reflectedDirection * maxDistance), 1);
+	//var a = cam.projection * cam.view * startView;
+	//return a.wwww / 100 * 0.5 + 0.5;
 
 	var endFrag     = cam.projection * cam.view * endView;
 		endFrag.x   = endFrag.x / endFrag.w * 0.5 + 0.5;

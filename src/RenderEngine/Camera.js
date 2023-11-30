@@ -11,7 +11,7 @@ export default class Camera
         yaw = 0,
         fov = 70, /* Degrees */ 
         nearPlane = 0.1,
-        farPlane = 1000.0,
+        farPlane = 100.0,
     } = {}){
         this.input = input;
         this.canvas = canvas;
