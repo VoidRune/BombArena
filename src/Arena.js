@@ -118,7 +118,7 @@ export default class Arena
         let bomb = new Tile();
         bomb.mesh = bombMesh
         bomb.texture = couldronTexture
-        bomb.collider = [0, 0, 1, 1]
+        bomb.collider = [0.2, 0.2, 0.8, 0.8]
         this.tiles['B'] = bomb
         this.buildArena();
     }
@@ -146,6 +146,7 @@ export default class Arena
                 if(this.tiles[tile] == undefined)
                     continue;
 
+                let isBomb = tile == 'B';
                 let colliders = this.tiles[tile].collider;
                 if (colliders.length != 0)
                 {
@@ -162,7 +163,21 @@ export default class Arena
                         
                         if (fOverlap > 0.0)
                         {
+                            if(isBomb)
+                            {
+                                let x = vCell[1] + 0.5
+                                let y = vCell[0] + 0.5
+                                let cX = currPos[1] - x
+                                let cY = currPos[0] - y
+                                let nX = nextPos[1] - x
+                                let nY = nextPos[0] - y
+                                if(nX*nX+nY*nY > cX*cX+cY*cY)
+                                {
+                                    fOverlap *= 0.05;
+                                }
+                            }
                             vec2.sub(nextPos, nextPos, vec3.scale(vec2.create(), vec2.normalize(vec2.create(), vRayToNearest), fOverlap));
+
                         }
                     }
                 }

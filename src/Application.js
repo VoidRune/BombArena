@@ -46,11 +46,17 @@ let lastAngle1 = 0
 let lastAngle2 = 0
 
 const player1Inventory = {
-    bombs: 2
+    bombs: 10,
+    bootsSpeed: 4,
+    detonationRange: 5,
+    detonationTime: 3,
 }
 
 const player2Inventory = {
-    bombs: 2
+    bombs: 2,
+    bootsSpeed: 2.5,
+    detonationRange: 1,
+    detonationTime: 3,
 }
 
 let dummyText;
@@ -129,15 +135,15 @@ export async function Init()
     particleSystem.emit(0, glowEffect2);*/
 }
 
-function placeBomb(coords, radius, time, timeout, playerInventory) {
-    if(playerInventory.bombs < 1) {
+function placeBomb(coords, time, playerInventory) {
+    if(playerInventory.bombs < 1 || arena.getTile(coords[0], coords[1]) !== ' ') {
         return
     }
     playerInventory.bombs--
     bombs.push({
         coords: coords, 
-        radius: radius,
-        time: time + timeout,
+        radius: playerInventory.detonationRange,
+        time: time + playerInventory.detonationTime,
         playerInventory: playerInventory
     })
     arena.setTile(coords[0], coords[1], 'B')
@@ -151,6 +157,7 @@ function checkBombs(time) {
         if (bomb.time < time) {
             dirty = true
             explodeBomb(bomb.coords, bomb.radius, time);
+            arena.setTile(bomb.coords[0], bomb.coords[1], ' ')
             bomb.playerInventory.bombs++
         } else {
             remainingBombs.push(bomb);
@@ -158,6 +165,7 @@ function checkBombs(time) {
     });
     if(dirty) {
         bombs = remainingBombs;
+        arena.updateArena()
     }
 }
 
@@ -268,7 +276,6 @@ export function RenderFrame()
 
     cam.update(dt);
 
-    let movementSpeed = 2.5;
     let velocity1 = [0, 0, 0];
 
     if (input.keys['KeyD']) { velocity1[0] += 1; }
@@ -287,7 +294,7 @@ export function RenderFrame()
 
 
     vec3.normalize(velocity1, velocity1);
-    vec3.scale(velocity1, velocity1, movementSpeed * dt);
+    vec3.scale(velocity1, velocity1, player1Inventory.bootsSpeed * dt);
     
     arena.collideCircle(player1Pos, velocity1, 0.4);
 
@@ -307,7 +314,7 @@ export function RenderFrame()
         lastAngle2 += deltaAngle * 0.1;
     }
     vec3.normalize(velocity2, velocity2);
-    vec3.scale(velocity2, velocity2, movementSpeed * dt);
+    vec3.scale(velocity2, velocity2, player2Inventory.bootsSpeed * dt);
     
     arena.collideCircle(player2Pos, velocity2, 0.4);
 
@@ -351,7 +358,7 @@ export function RenderFrame()
     if (input.keys['KeyE'] && !keyEDown) 
     {
         keyEDown = true
-        placeBomb([Math.floor(player1Pos[0]), Math.floor(player1Pos[2])], 5, time, 5, player1Inventory);
+        placeBomb([Math.floor(player1Pos[0]), Math.floor(player1Pos[2])], time, player1Inventory);
     } else if (!input.keys['KeyE']) {
         keyEDown = false
     }
@@ -360,7 +367,7 @@ export function RenderFrame()
     if (input.keys['Enter'] && !keyEnterDown) 
     {
         keyEnterDown = true
-        placeBomb([Math.floor(player2Pos[0]), Math.floor(player2Pos[2])], 5, time, 5, player2Inventory);
+        placeBomb([Math.floor(player2Pos[0]), Math.floor(player2Pos[2])], time, player2Inventory);
     } else if (!input.keys['Enter']) {
         keyEnterDown = false
     }
@@ -381,7 +388,7 @@ export function RenderFrame()
     distanceOfPositions = Math.sqrt(distanceOfPositions)
 
     cam.updatePosition(averagePosition, distanceOfPositions)
-    console.log(averagePosition, distanceOfPositions);
+    //console.log(averagePosition, distanceOfPositions);
 
     renderData.reset();
     renderData.pushMatrix(cam.viewMatrix);
