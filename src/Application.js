@@ -45,7 +45,17 @@ let player2Pos = [arena.arenaForegroundData.length - 1.5, 0, arena.arenaForegrou
 let lastAngle1 = 0
 let lastAngle2 = 0
 
+const player1Inventory = {
+    bombs: 2
+}
+
+const player2Inventory = {
+    bombs: 2
+}
+
 let dummyText;
+let player1HUD
+let player2HUD
 
 export async function Init()
 {
@@ -63,6 +73,20 @@ export async function Init()
     dummyText.color = [1, 1, 1];
     dummyText.scale = 400;
     fontGenerator.addText(dummyText);
+
+    player1HUD = new Text()
+    player1HUD.string = ""
+    player1HUD.position = [20, 100]
+    player1HUD.color = [1, 1, 1]
+    player1HUD.scale = 300
+    fontGenerator.addText(player1HUD)
+
+    player2HUD = new Text()
+    player2HUD.string = ""
+    player2HUD.position = [canvas.width - 250, 100]
+    player2HUD.color = [1, 1, 1]
+    player2HUD.scale = 300
+    fontGenerator.addText(player2HUD)
     
     let environment = resourceCache.addMesh(await loadMesh('/res/meshes/environment.obj'));
 
@@ -105,13 +129,37 @@ export async function Init()
     particleSystem.emit(0, glowEffect2);*/
 }
 
-
-let gameLoop = setInterval(() => {
-    if(true) {
-        //updateArena()
-        //arenaChanged = false
+function placeBomb(coords, radius, time, timeout, playerInventory) {
+    if(playerInventory.bombs < 1) {
+        return
     }
-}, 50)
+    playerInventory.bombs--
+    bombs.push({
+        coords: coords, 
+        radius: radius,
+        time: time + timeout,
+        playerInventory: playerInventory
+    })
+    arena.setTile(coords[0], coords[1], 'B')
+    arena.updateArena()
+}
+
+function checkBombs(time) {
+    const remainingBombs = [];
+    let dirty = false
+    bombs.forEach((bomb) => {
+        if (bomb.time < time) {
+            dirty = true
+            explodeBomb(bomb.coords, bomb.radius, time);
+            bomb.playerInventory.bombs++
+        } else {
+            remainingBombs.push(bomb);
+        }
+    });
+    if(dirty) {
+        bombs = remainingBombs;
+    }
+}
 
 function explodeBomb(coords, radius, time) {
     
@@ -124,7 +172,20 @@ function explodeBomb(coords, radius, time) {
         [ 1, 0]
     ];
 
-    let dirty = false;
+    arena.setTile(x, y, '_')
+    
+
+    if(checkPlayerExploded([x + 0.5, 0, y + 0.5], player1Pos)) {
+        alert("Player 1 exploded")
+    }
+    
+    if(checkPlayerExploded([x + 0.5, 0, y + 0.5], player2Pos)) {
+        alert("Player 2 exploded")
+    }
+
+    explosionEffect([x + 0.5, 0.5, y + 0.5], time)
+
+    
     for (let [dx, dy] of directions) {
         for (let i = 1; i <= radius; i++) {
             let newX = x + dx * i;
@@ -139,11 +200,19 @@ function explodeBomb(coords, radius, time) {
 
             if (t === 'T') {
                 arena.setTile(newX, newY, ' ');
-                dirty = true;
                 explosionEffect([newX + 0.5, 0.5, newY + 0.5], time)
                 break
             }
             else if (t === ' ') {
+
+                if(checkPlayerExploded([newX + 0.5, 0, newY + 0.5], player1Pos)) {
+                    alert("Player 1 exploded")
+                }
+                
+                if(checkPlayerExploded([newX + 0.5, 0, newY + 0.5], player2Pos)) {
+                    alert("Player 2 exploded")
+                }
+
                 explosionEffect([newX + 0.5, 0.5, newY + 0.5], time)
 
                 continue
@@ -152,16 +221,20 @@ function explodeBomb(coords, radius, time) {
         }
     }
 
-    if(dirty)
-    {
-        arena.updateArena();
+    arena.updateArena();
+}
+
+function checkPlayerExploded(bombPos, playerPos) {
+    if(Math.abs(bombPos[0] - playerPos[0]) < 0.5 && Math.abs(bombPos[2] - playerPos[2]) < 0.5) {
+        console.log("Player exploded")
+        return true
     }
 }
 
 
 let lastTime = performance.now() / 1000;
-let hasBomb1Exploded = false
-let hasBomb2Exploded = false
+
+let bombs = []
 
 function HSVtoRGB(h, s, v) {
     var r, g, b, i, f, p, q, t;
@@ -180,6 +253,9 @@ function HSVtoRGB(h, s, v) {
     }
     return [r, g, b]
 }
+
+let keyEDown = false
+let keyEnterDown = false
 
 export function RenderFrame()
 {
@@ -238,6 +314,9 @@ export function RenderFrame()
     dummyText.string = "Current time: " + time.toFixed(2);
     dummyText.color = HSVtoRGB(time * 0.1, 1.0, 1.0);
 
+    player1HUD.string = "Bombs left: " + player1Inventory.bombs
+    player2HUD.string = "Bombs left: " + player2Inventory.bombs
+
     powerUpEffect.position = [1.5, 0.4 + Math.sin(time * 1.5) * 0.2, 5.5];
     powerUpEffect.colorStart = HSVtoRGB(time * 0.2, 1.0, 1.0);
     powerUpEffect.colorEnd = powerUpEffect.colorStart;
@@ -267,25 +346,26 @@ export function RenderFrame()
     fire.texCoord = [fireX / 8, 7 / 8, (fireX + 1) / 8, 8 / 8];
     fire.lifetime = Math.random() * 0.3 + 0.3;
     particleSystem.emit(time, fire);
-    // If the key E is pressed down and a bomb has not yet exploded
-    // temporary fix for chain bomb explosions
-    if (input.keys['KeyE'] && !hasBomb1Exploded) 
+
+    // If the key E is pressed down
+    if (input.keys['KeyE'] && !keyEDown) 
     {
-        hasBomb1Exploded = true
-        explodeBomb([Math.floor(player1Pos[0]), Math.floor(player1Pos[2])], 5, time);
+        keyEDown = true
+        placeBomb([Math.floor(player1Pos[0]), Math.floor(player1Pos[2])], 5, time, 5, player1Inventory);
     } else if (!input.keys['KeyE']) {
-        hasBomb1Exploded = false
+        keyEDown = false
     }
 
-     // If the key E is pressed down and a bomb has not yet exploded
-    // temporary fix for chain bomb explosions
-    if (input.keys['Enter'] && !hasBomb2Exploded) 
+     // If the key Enter is pressed down
+    if (input.keys['Enter'] && !keyEnterDown) 
     {
-        hasBomb2Exploded = true
-        explodeBomb([Math.floor(player2Pos[0]), Math.floor(player2Pos[2])], 5, time);
+        keyEnterDown = true
+        placeBomb([Math.floor(player2Pos[0]), Math.floor(player2Pos[2])], 5, time, 5, player2Inventory);
     } else if (!input.keys['Enter']) {
-        hasBomb2Exploded = false
+        keyEnterDown = false
     }
+
+    checkBombs(time)
     //player1Batch.reset();
     //player1Batch.addInstance([cam.position[0], 1, 1]);
     player1Batch.updateInstance(0, player1Pos, [0, lastAngle1, 0]);

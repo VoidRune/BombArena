@@ -32,7 +32,7 @@ export default class Arena
             [ '#',' ','#',' ','#',' ',' ',' ',' ',' ',' ','#',' ','#',' ','#' ],
             [ '#',' ',' ',' ',' ',' ','T',' ',' ','#',' ',' ',' ',' ',' ','#' ],
             [ '#',' ',' ','T',' ','T','T',' ',' ','#','#',' ','T',' ',' ','#' ],
-            [ '#',' ','#','O',' ',' ',' ','I',' ',' ',' ',' ',' ','#',' ','#' ],
+            [ '#','B','#','O',' ',' ',' ','I',' ',' ',' ',' ',' ','#',' ','#' ],
             [ '#',' ','#',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','#',' ','#' ],
             [ '#',' ','O','T','C',' ',' ',' ',' ','T','T',' ','T',' ',' ','#' ],
             [ '#',' ','O',' ',' ',' ',' ',' ',' ','T',' ',' ',' ',' ',' ','#' ],
@@ -71,6 +71,7 @@ export default class Arena
         let torchMesh = resourceCache.addMesh(await loadMesh('/res/meshes/torch.obj'));
         let couldronMesh = resourceCache.addMesh(await loadMesh('/res/meshes/couldron.obj'));
         let fireplaceMesh = resourceCache.addMesh(await loadMesh('/res/meshes/fireplace.obj'));
+        let bombMesh = resourceCache.addMesh(await loadMesh('/res/meshes/bomb.obj'))
         
         let sandstone = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Sandstone/albedo.png'), await loadImageRGBA('/res/textures/Sandstone/normal.png'));
         let greystone = resourceCache.addMaterial(await loadImageRGBA('/res/textures/GreyStone/albedo.png'), await loadImageRGBA('/res/textures/GreyStone/normal.png'));
@@ -78,7 +79,6 @@ export default class Arena
         let barrelTexture = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Barrel/albedo.png'), await loadImageRGBA('/res/textures/Barrel/normal.png'));
         let couldronTexture = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Couldron/albedo.png'), await loadImageRGBA('/res/textures/Couldron/normal.png'));
         let fireplaceTexture = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Fireplace/albedo.png'), await loadImageRGBA('/res/textures/Fireplace/normal.png'));
-    
 
 
         let wall = new Tile();
@@ -115,6 +115,11 @@ export default class Arena
         fireplace.texture = fireplaceTexture;
         fireplace.collider = [0, 0, 1, 1];
         this.tiles['F'] = fireplace;
+        let bomb = new Tile();
+        bomb.mesh = bombMesh
+        bomb.texture = couldronTexture
+        bomb.collider = [0, 0, 1, 1]
+        this.tiles['B'] = bomb
         this.buildArena();
     }
 
