@@ -37,6 +37,9 @@ let glowEffect1 = new Particle();
 let glowEffect2 = new Particle();
 
 let powerUpEffect = new Particle();
+let BombUpEffect = new Particle();
+let SpeedUpEffect = new Particle();
+let explosionUpEffect = new Particle();
 
 const arena = new Arena();
 
@@ -126,6 +129,22 @@ export async function Init()
     powerUpEffect.lifetime = 99999999;
     powerUpEffect.texCoord = [0 / 8, 0 / 8, 1 / 8, 1 / 8];
     particleSystem.emit(0, powerUpEffect);
+
+    BombUpEffect.position = [2, 2, 2];
+    BombUpEffect.lifetime = 99999999;
+    BombUpEffect.texCoord = [1 / 8, 0 / 8, 2 / 8, 1 / 8];
+    particleSystem.emit(0, BombUpEffect);
+
+    SpeedUpEffect.position = [3, 2, 3];
+    SpeedUpEffect.lifetime = 99999999;
+    SpeedUpEffect.texCoord = [2 / 8, 0 / 8, 3 / 8, 1 / 8];
+    particleSystem.emit(0, SpeedUpEffect);
+
+    explosionUpEffect.position = [4, 2, 4];
+    explosionUpEffect.lifetime = 99999999;
+    explosionUpEffect.texCoord = [3 / 8, 0 / 8, 4 / 8, 1 / 8];
+    particleSystem.emit(0, explosionUpEffect);
+
 
     /*glowEffect1.lifetime = 99999999;
     glowEffect1.texCoord = [0 / 8, 1 / 8, 4 / 8, 5 / 8];
