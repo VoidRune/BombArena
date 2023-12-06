@@ -45,13 +45,91 @@ let explosionUpEffect = new Particle();
 const arena = new Arena();
 
 const player1 = new Player()
-console.log(player1)
-player1.position = [1.5, 0, 1.5]
 const player2 = new Player()
-player2.position = [arena.arenaForegroundData.length - 1.5, 0, arena.arenaForegroundData[0].length -1.5]
+
+let powerUps = []
+
+const powerUpParticles = {
+    speed: [2 / 8, 0 / 8, 3 / 8, 1 / 8],
+    radius: [3 / 8, 0 / 8, 4 / 8, 1 / 8],
+    bomb: [1 / 8, 0 / 8, 2 / 8, 1 / 8]
+}
+
 let dummyText;
 let player1HUD
 let player2HUD
+
+function addPowerup(type, position, particleSystem) {
+    const particle = new Particle()
+    particle.position = position
+    particle.lifetime = 9999999
+    particle.texCoord = powerUpParticles[type]
+
+    console.log(particle)
+    powerUps.push({
+        type: type,
+        position: position,
+        particle: particle
+    })
+
+    particleSystem.emit(0, particle)
+}
+
+function getRandomEmptyPosition() {
+    const emptyPositions = []
+    for(let y = 0; y < arena.arenaForegroundData.length; y++) {
+        for(let x = 0; x < arena.arenaForegroundData[y].length; x++) {
+            if(arena.arenaForegroundData[y][x] === " ") {
+                emptyPositions.push([x + 0.5, 0.5, y + 0.5])
+            }
+        }
+    }
+
+    if(emptyPositions.length < 1) {
+        return false
+    }
+    const randomIndex = Math.floor(Math.random() * emptyPositions.length)
+
+    return emptyPositions[randomIndex]
+}
+
+let timeForNewPowerup = 0
+
+function addRandomPowerup(time, timeout) {
+    const types = ['speed', 'radius', 'bomb']
+    const randomType = types[Math.floor(Math.random() * types.length)]
+    const randomPosition = getRandomEmptyPosition()
+
+    timeForNewPowerup = time + timeout
+
+    if(!randomPosition) {
+        return
+    }
+    
+    addPowerup(randomType, randomPosition, particleSystem)
+    
+}
+
+function checkPowerups() {
+    const newPowerUps = []
+    let dirty = false
+    powerUps.forEach((powerUp) => {
+        if(checkPlayerExploded(powerUp.position, player1.position)) {
+            dirty = true
+            powerUp.particle.lifetime = 0
+            player1.addPowerup(powerUp.type)
+        } else if (checkPlayerExploded(powerUp.position, player2.position)) {
+            dirty = true
+            powerUp.particle.lifetime = 0
+            player2.addPowerup(powerUp.type)
+        } else {
+            newPowerUps.push(powerUp)
+        }
+    })
+    if(dirty) {
+        powerUps = newPowerUps
+    }
+}
 
 export async function Init()
 {
@@ -63,8 +141,10 @@ export async function Init()
     
     await arena.Initialize(resourceCache);
 
-    player1Pos = [1.5, 0, 1.5]
-    player2Pos = [arena.arenaForegroundData[0].length - 1.5, 0, arena.arenaForegroundData.length -1.5]
+    player1.position = [1.5, 0, 1.5]
+    player1.startPosition = [1.5, 0, 1.5]
+    player2.position = [arena.arenaForegroundData[0].length - 1.5, 0, arena.arenaForegroundData.length -1.5]
+    player2.startPosition = [arena.arenaForegroundData[0].length - 1.5, 0, arena.arenaForegroundData.length -1.5]
 
     dummyText = new Text();
     dummyText.string = "Omegalul";
@@ -82,7 +162,7 @@ export async function Init()
 
     player2HUD = new Text()
     player2HUD.string = ""
-    player2HUD.position = [canvas.width - 400, 100]
+    player2HUD.position = [canvas.width - 500, 100]
     player2HUD.color = [1, 1, 1]
     player2HUD.scale = 300
     fontGenerator.addText(player2HUD)
@@ -120,22 +200,6 @@ export async function Init()
     powerUpEffect.texCoord = [0 / 8, 0 / 8, 1 / 8, 1 / 8];
     particleSystem.emit(0, powerUpEffect);
 
-    BombUpEffect.position = [2, 2, 2];
-    BombUpEffect.lifetime = 99999999;
-    BombUpEffect.texCoord = [1 / 8, 0 / 8, 2 / 8, 1 / 8];
-    particleSystem.emit(0, BombUpEffect);
-
-    SpeedUpEffect.position = [3, 2, 3];
-    SpeedUpEffect.lifetime = 99999999;
-    SpeedUpEffect.texCoord = [2 / 8, 0 / 8, 3 / 8, 1 / 8];
-    particleSystem.emit(0, SpeedUpEffect);
-
-    explosionUpEffect.position = [4, 2, 4];
-    explosionUpEffect.lifetime = 99999999;
-    explosionUpEffect.texCoord = [3 / 8, 0 / 8, 4 / 8, 1 / 8];
-    particleSystem.emit(0, explosionUpEffect);
-
-
     /*glowEffect1.lifetime = 99999999;
     glowEffect1.texCoord = [0 / 8, 1 / 8, 4 / 8, 5 / 8];
     glowEffect2.lifetime = 99999999;
@@ -144,17 +208,18 @@ export async function Init()
     particleSystem.emit(0, glowEffect2);*/
 }
 
-function placeBomb(coords, time, playerInventory) {
-    if(playerInventory.bombs < 1 || arena.getTile(coords[0], coords[1]) !== ' ') {
+function placeBomb(player, time) {
+    const coords = [Math.floor(player.position[0]), Math.floor(player.position[2])]
+    if(player.inventory.bombs < 1 || arena.getTile(coords[0], coords[1]) !== ' ') {
         return
     }
-    playerInventory.bombs--
-    playerInventory.lastPlaced = [coords[0], coords[1]];
+    player.inventory.bombs--
+    player.inventory.lastPlaced = [coords[0], coords[1]];
     bombs.push({
         coords: coords, 
-        radius: playerInventory.detonationRange,
-        time: time + playerInventory.detonationTime,
-        playerInventory: playerInventory
+        radius: player.getBombRadius(),
+        time: time + player.getDetonationTime(),
+        playerInventory: player.inventory
     })
     arena.setTile(coords[0], coords[1], 'B')
     arena.updateArena()
@@ -190,11 +255,20 @@ function explodeBomb(coords, radius, time) {
         [ 1, 0]
     ];
 
-    arena.setTile(x, y, '_')
-    
+    arena.setTile(x, y, ' ')
 
     explosionEffect([x + 0.5, 0.5, y + 0.5], time)
 
+    let player1Died = false
+    let player2Died = false
+
+    let playersDied = checkPlayerDeaths(x, y)
+    if(playersDied % 2  === 1) {
+        player1Died = true
+    }
+    if(playersDied >= 2) {
+        player2Died = true
+    }
     
     for (let [dx, dy] of directions) {
         for (let i = 1; i <= radius; i++) {
@@ -215,14 +289,14 @@ function explodeBomb(coords, radius, time) {
                 break
             }
             else if (t === ' ') {
+                playersDied = checkPlayerDeaths(newX, newY)
+                if(playersDied % 2  === 1) {
+                    player1Died = true
+                }
+                if(playersDied >= 2) {
+                    player2Died = true
+                }
 
-                if(checkPlayerExploded([newX + 0.5, 0, newY + 0.5], player1Pos)) {
-                    player2Inventory.score++;
-                }
-                
-                if(checkPlayerExploded([newX + 0.5, 0, newY + 0.5], player2Pos)) {
-                    player1Inventory.score++;
-                }
 
                 explosionEffect([newX + 0.5, 0.5, newY + 0.5], time)
 
@@ -232,14 +306,51 @@ function explodeBomb(coords, radius, time) {
         }
     }
 
+    executePlayerDeaths(player1Died, player2Died)
+
     arena.updateArena();
+}
+
+function checkPlayerDeaths(x, y) {
+    let result = 0
+    if(checkPlayerExploded([x + 0.5, 0, y + 0.5], player1.position)) {
+        result += 1
+    }
+    
+    if(checkPlayerExploded([x + 0.5, 0, y + 0.5], player2.position)) {
+        result += 2
+    }
+
+    return result
+}
+
+function executePlayerDeaths(player1Died, player2Died) {
+    if(player1Died) {
+        player2.score++
+        player1.kill()
+    }
+    if(player2Died) {
+        player1.score++
+        player2.kill()
+    }
+    if(player1.lives < 1 || player2.lives < 1) {
+        const winner = player1.lives > player2.lives ? "Player 1 wins" : (player1.lives === player2.lives ? "Draw" : "Player 2 Wins")
+        alert(winner)
+        window.location.reload()
+    }
+
+}
+
+function resetPlayers() {
+    player1.reset()
+    player2.reset()
 }
 
 function checkPlayerExploded(bombPos, playerPos) {
     if(Math.abs(bombPos[0] - playerPos[0]) < 0.5 && Math.abs(bombPos[2] - playerPos[2]) < 0.5) {
-        console.log("Player exploded")
         return true
     }
+    return false
 }
 
 
@@ -279,6 +390,11 @@ export function RenderFrame()
 
     cam.update(dt);
 
+    checkPowerups()
+    if(time > timeForNewPowerup && powerUps.length < 5) {
+        addRandomPowerup(time, 5)
+    }
+
     let velocity1 = [0, 0, 0];
 
     if (input.keys['KeyD']) { velocity1[0] += 1; }
@@ -299,10 +415,10 @@ export function RenderFrame()
     vec3.normalize(velocity1, velocity1);
     vec3.scale(velocity1, velocity1, player1.getSpeed() * dt);
     
-    arena.collideCircle(player1Pos, velocity1, 0.4, player1Inventory.lastPlaced);
+    arena.collideCircle(player1.position, velocity1, 0.4, player1.inventory.lastPlaced);
 
-    if(Math.floor(player1Pos[0]) != player1Inventory.lastPlaced[0] || Math.floor(player1Pos[2]) != player1Inventory.lastPlaced[1])
-        player1Inventory.lastPlaced = [-1, -1];
+    if(Math.floor(player1.position[0]) != player1.inventory.lastPlaced[0] || Math.floor(player1.position[2]) != player1.inventory.lastPlaced[1])
+        player1.inventory.lastPlaced = [-1, -1];
 
     let velocity2 = [0, 0, 0];
     if (input.keys['ArrowRight']) { velocity2[0] += 1; }
@@ -322,15 +438,15 @@ export function RenderFrame()
     vec3.normalize(velocity2, velocity2);
     vec3.scale(velocity2, velocity2, player2.getSpeed() * dt);
     
-    arena.collideCircle(player2Pos, velocity2, 0.4, player2Inventory.lastPlaced);
-    if(Math.floor(player2Pos[0]) != player2Inventory.lastPlaced[0] || Math.floor(player2Pos[2]) != player2Inventory.lastPlaced[1])
-        player2Inventory.lastPlaced = [-1, -1];
+    arena.collideCircle(player2.position, velocity2, 0.4, player2.inventory.lastPlaced);
+    if(Math.floor(player2.position[0]) != player2.inventory.lastPlaced[0] || Math.floor(player2.position[2]) != player2.inventory.lastPlaced[1])
+        player2.inventory.lastPlaced = [-1, -1];
 
     dummyText.string = "Current time: " + time.toFixed(2);
     dummyText.color = HSVtoRGB(time * 0.1, 1.0, 1.0);
 
-    player1HUD.string = "Bombs left: " + player1.getBombs()
-    player2HUD.string = "Bombs left: " + player2.getBombs()
+    player1HUD.string = "Bombs: " + player1.getBombs() + " Score: " + player1.score + " Lives: " + player1.lives
+    player2HUD.string = "Bombs: " + player2.getBombs() + " Score: " + player2.score + " Lives: " + player2.lives
 
     powerUpEffect.position = [1.5, 0.4 + Math.sin(time * 1.5) * 0.2, 5.5];
     powerUpEffect.colorStart = HSVtoRGB(time * 0.2, 1.0, 1.0);
@@ -366,7 +482,7 @@ export function RenderFrame()
     if (input.keys['KeyE'] && !keyEDown) 
     {
         keyEDown = true
-        placeBomb([Math.floor(player1.position[0]), Math.floor(player1.position[2])], player1.getBombRadius(), time, 5, player1.inventory);
+        placeBomb(player1, time);
     } else if (!input.keys['KeyE']) {
         keyEDown = false
     }
@@ -375,7 +491,7 @@ export function RenderFrame()
     if (input.keys['Enter'] && !keyEnterDown) 
     {
         keyEnterDown = true
-        placeBomb([Math.floor(player2.position[0]), Math.floor(player2.position[2])], player2.getBombRadius(), time, 5, player2.inventory);
+        placeBomb(player2, time);
     } else if (!input.keys['Enter']) {
         keyEnterDown = false
     }

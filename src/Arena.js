@@ -134,7 +134,8 @@ export default class Arena
         batch.texture = t.texture;
         this.batches['B'] = batch;
 
-        this.arenaForegroundData = [
+        // Temporarily removed for testing purposes
+        /*this.arenaForegroundData = [
             [ '#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#' ],
             [ '#',' ',' ','X','X','X','X',' ','X',' ','X','X','X','X',' ',' ','#' ],
             [ '#',' ','#','X','#','X','#','X','#','X','#','X','#','X','#',' ','#' ],
@@ -185,7 +186,7 @@ export default class Arena
                     this.arenaBackgroundData[y][x] = '_';
                 }
             }  
-        }
+        }*/
 
 
         this.buildArena();
