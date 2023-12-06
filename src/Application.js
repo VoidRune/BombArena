@@ -6,6 +6,7 @@ import Input from './Input.js';
 import Camera from './RenderEngine/Camera.js';
 import { loadImageRGBA, loadTexture, loadMesh } from './AssetLoader.js';
 import Arena from './Arena.js';
+import Player from './Player.js';
 import { Particle } from './RenderEngine/ParticleSystem.js';
 
 if (!navigator.gpu) throw new Error("WebGPU not supported on this browser.");
@@ -43,29 +44,11 @@ let explosionUpEffect = new Particle();
 
 const arena = new Arena();
 
-let player1Pos = [0, 0, 0]
-let player2Pos = [0, 0, 0]
-let lastAngle1 = 0
-let lastAngle2 = 0
-
-const player1Inventory = {
-    bombs: 10,
-    bootsSpeed: 4,
-    detonationRange: 10,
-    detonationTime: 3,
-    score: 0,
-    lastPlaced: [-1, -1]
-}
-
-const player2Inventory = {
-    bombs: 2,
-    bootsSpeed: 2.5,
-    detonationRange: 10,
-    detonationTime: 3,
-    score: 0,
-    lastPlaced: [-1, -1]
-}
-
+const player1 = new Player()
+console.log(player1)
+player1.position = [1.5, 0, 1.5]
+const player2 = new Player()
+player2.position = [arena.arenaForegroundData.length - 1.5, 0, arena.arenaForegroundData[0].length -1.5]
 let dummyText;
 let player1HUD
 let player2HUD
@@ -308,13 +291,13 @@ export function RenderFrame()
     {
         angle1 = (angle1 + 180) % 360 - 180;
 
-        let deltaAngle = ((angle1 - lastAngle1 + 540) % 360) - 180;
-        lastAngle1 += deltaAngle * 0.1;
+        let deltaAngle = ((angle1 - player1.angle + 540) % 360) - 180;
+        player1.angle += deltaAngle * 0.1;
     }
 
 
     vec3.normalize(velocity1, velocity1);
-    vec3.scale(velocity1, velocity1, player1Inventory.bootsSpeed * dt);
+    vec3.scale(velocity1, velocity1, player1.getSpeed() * dt);
     
     arena.collideCircle(player1Pos, velocity1, 0.4, player1Inventory.lastPlaced);
 
@@ -333,11 +316,11 @@ export function RenderFrame()
     {
         angle2 = (angle2 + 180) % 360 - 180;
 
-        let deltaAngle = ((angle2 - lastAngle2 + 540) % 360) - 180;
-        lastAngle2 += deltaAngle * 0.1;
+        let deltaAngle = ((angle2 - player2.angle + 540) % 360) - 180;
+        player2.angle += deltaAngle * 0.1;
     }
     vec3.normalize(velocity2, velocity2);
-    vec3.scale(velocity2, velocity2, player2Inventory.bootsSpeed * dt);
+    vec3.scale(velocity2, velocity2, player2.getSpeed() * dt);
     
     arena.collideCircle(player2Pos, velocity2, 0.4, player2Inventory.lastPlaced);
     if(Math.floor(player2Pos[0]) != player2Inventory.lastPlaced[0] || Math.floor(player2Pos[2]) != player2Inventory.lastPlaced[1])
@@ -346,8 +329,8 @@ export function RenderFrame()
     dummyText.string = "Current time: " + time.toFixed(2);
     dummyText.color = HSVtoRGB(time * 0.1, 1.0, 1.0);
 
-    player1HUD.string = "Bombs left: " + player1Inventory.bombs + " Score: " + player1Inventory.score
-    player2HUD.string = "Bombs left: " + player2Inventory.bombs + " Score: " + player2Inventory.score
+    player1HUD.string = "Bombs left: " + player1.getBombs()
+    player2HUD.string = "Bombs left: " + player2.getBombs()
 
     powerUpEffect.position = [1.5, 0.4 + Math.sin(time * 1.5) * 0.2, 5.5];
     powerUpEffect.colorStart = HSVtoRGB(time * 0.2, 1.0, 1.0);
@@ -355,12 +338,12 @@ export function RenderFrame()
     powerUpEffect.radiusStart = 0.4;
     powerUpEffect.radiusEnd = powerUpEffect.radiusStart;
     /*
-    glowEffect1.position = [player1Pos[0], 0.75, player1Pos[2]];
+    glowEffect1.position = [player1.position[0], 0.75, player1.position[2]];
     glowEffect1.radiusStart = 1.5 + Math.sin(time) * 0.5;
     glowEffect1.radiusEnd = glowEffect1.radiusStart;
     glowEffect1.rotationStart = time * 0.4;
     glowEffect1.rotationEnd = glowEffect1.rotationStart;
-    glowEffect2.position = [player1Pos[0], 0.75, player1Pos[2]];
+    glowEffect2.position = [player1.position[0], 0.75, player1.position[2]];
     glowEffect2.radiusStart = glowEffect1.radiusStart;
     glowEffect2.radiusEnd = glowEffect2.radiusStart;
     glowEffect2.rotationStart = -time * 0.4;
@@ -383,7 +366,7 @@ export function RenderFrame()
     if (input.keys['KeyE'] && !keyEDown) 
     {
         keyEDown = true
-        placeBomb([Math.floor(player1Pos[0]), Math.floor(player1Pos[2])], time, player1Inventory);
+        placeBomb([Math.floor(player1.position[0]), Math.floor(player1.position[2])], player1.getBombRadius(), time, 5, player1.inventory);
     } else if (!input.keys['KeyE']) {
         keyEDown = false
     }
@@ -392,7 +375,7 @@ export function RenderFrame()
     if (input.keys['Enter'] && !keyEnterDown) 
     {
         keyEnterDown = true
-        placeBomb([Math.floor(player2Pos[0]), Math.floor(player2Pos[2])], time, player2Inventory);
+        placeBomb([Math.floor(player2.position[0]), Math.floor(player2.position[2])], player2.getBombRadius(), time, 5, player2.inventory);
     } else if (!input.keys['Enter']) {
         keyEnterDown = false
     }
@@ -400,15 +383,15 @@ export function RenderFrame()
     checkBombs(time)
     //player1Batch.reset();
     //player1Batch.addInstance([cam.position[0], 1, 1]);
-    player1Batch.updateInstance(0, player1Pos, [0, lastAngle1, 0]);
-    player2Batch.updateInstance(0, player2Pos, [0, lastAngle2, 0]);
+    player1Batch.updateInstance(0, player1.position, [0, player1.angle, 0]);
+    player2Batch.updateInstance(0, player2.position, [0, player2.angle, 0]);
 
     // Camera in the average position between the two players
     // Offset scaled by their distance
-    const averagePosition = player1Pos.map((value, index) => (value + player2Pos[index]) / 2)
+    const averagePosition = player1.position.map((value, index) => (value + player2.position[index]) / 2)
     let distanceOfPositions = 0;
     for (let i = 0; i < 3; i++) {
-        distanceOfPositions += (player1Pos[i] - player2Pos[i]) ** 2;
+        distanceOfPositions += (player1.position[i] - player2.position[i]) ** 2;
     }
     distanceOfPositions = Math.sqrt(distanceOfPositions)
 
