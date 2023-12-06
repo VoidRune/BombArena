@@ -9,10 +9,11 @@ export class Tile
         mesh = 0,
         texture = 0,
         collider = [],
+        destructible = false,
     ){
         this.mesh = mesh;
         this.texture = texture;
-
+        this.destructible = destructible;
         this.collider = collider;
     }
 }
@@ -50,7 +51,7 @@ export default class Arena
             [ ' ','_',' ','_',' ','_','_','_','_','_','_',' ','_',' ','_',' ' ],
             [ ' ','_','_','_','_','_','_','_','_',' ','_','_','_','_','_',' ' ],
             [ ' ','_','_','_','_','_','_','_','_',' ',' ','_','_','_','_',' ' ],
-            [ ' ','_',' ','_','_','_','_',' ','_','_','_','_','_',' ','_',' ' ],
+            [ ' ','_',' ','_','_','_','_','_','_','_','_','_','_',' ','_',' ' ],
             [ ' ','_',' ','_','_','_','_','_','_','_','_','_','_',' ','_',' ' ],
             [ ' ','_','_','_','_','_','_','_','_','_','_','_','_','_','_',' ' ],
             [ ' ','_','_','_','_','_','_','_','_','_','_','_','_','_','_',' ' ],
@@ -59,6 +60,8 @@ export default class Arena
             [ ' ','_',' ','_',' ','_','_',' ',' ','_','_',' ','_',' ','_',' ' ],
             [ ' ','_','_','_','_','_','_','_','_','_','_','_','_','_','_',' ' ],
             [ ' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ' ]];
+
+        
     }
 
     async Initialize(resourceCache)
@@ -94,21 +97,25 @@ export default class Arena
         tombstone.mesh = tombstoneMesh;
         tombstone.texture = greystone;
         tombstone.collider = [0.2, 0.2, 0.8, 0.8];
+        tombstone.destructible = true;
         this.tiles['T'] = tombstone;
         let barrel = new Tile();
         barrel.mesh = barrelMesh;
         barrel.texture = barrelTexture;
         barrel.collider = [0, 0, 1, 1];
+        barrel.destructible = true;
         this.tiles['O'] = barrel;
         let torch = new Tile();
         torch.mesh = torchMesh;
         torch.texture = japanesewall;
         torch.collider = [0.4, 0.4, 0.6, 0.6];
+        torch.destructible = true;
         this.tiles['I'] = torch;
         let couldron = new Tile();
         couldron.mesh = couldronMesh;
         couldron.texture = couldronTexture;
         couldron.collider = [0.2, 0.2, 0.8, 0.8];
+        couldron.destructible = true;
         this.tiles['C'] = couldron;
         let fireplace = new Tile();
         fireplace.mesh = fireplaceMesh;
@@ -120,6 +127,71 @@ export default class Arena
         bomb.texture = couldronTexture
         bomb.collider = [0.2, 0.2, 0.8, 0.8]
         this.tiles['B'] = bomb
+
+        let batch = new InstancedBatch();
+        let t = this.tiles['B'];
+        batch.mesh = t.mesh;
+        batch.texture = t.texture;
+        this.batches['B'] = batch;
+
+        this.arenaForegroundData = [
+            [ '#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#' ],
+            [ '#',' ',' ','X','X','X','X','X','X','X','X','X','X','X',' ',' ','#' ],
+            [ '#',' ','#','X','#','X','#','X','#','X','#','X','#','X','#',' ','#' ],
+            [ '#','X','X','X','X',' ','X','X','X','X','X',' ','X','X','X','X','#' ],
+            [ '#','X','#',' ','#','X','#','X','#','X','#','X','#',' ','#','X','#' ],
+            [ '#','X',' ',' ',' ','X','X','X','X','X','X','X',' ',' ',' ','X','#' ],
+            [ '#','X','#',' ','#','X','#','X','#','X','#','X','#',' ','#','X','#' ],
+            [ '#','X','X','X','X','X','X',' ','#',' ','X','X','X','X','X','X','#' ],
+            [ '#','X','#','X','#','X','#','#','#','#','#','X','#','X','#','X','#' ],
+            [ '#','X','X','X','X','X','X',' ','#',' ','X','X','X','X','X','X','#' ],
+            [ '#','X','#',' ','#','X','#','X','#','X','#','X','#',' ','#','X','#' ],
+            [ '#','X',' ',' ',' ','X','X','X','X','X','X','X',' ',' ',' ','X','#' ],
+            [ '#','X','#',' ','#','X','#','X','#','X','#','X','#',' ','#','X','#' ],
+            [ '#','X','X','X','X',' ','X','X','X','X','X',' ','X','X','X','X','#' ],
+            [ '#',' ','#','X','#','X','#','X','#','X','#','X','#','X','#',' ','#' ],
+            [ '#',' ',' ','X','X','X','X','X','X','X','X','X','X','X',' ',' ','#' ],
+            [ '#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#' ]];
+
+        this.arenaBackgroundData = Array(this.arenaForegroundData.length);
+        for (var i = 0; i < this.arenaBackgroundData.length; i++) {
+            this.arenaBackgroundData[i] = Array(this.arenaForegroundData[i].length).fill(' ');
+        }
+            
+
+        let probability = {
+            'O': 10,
+            'C': 10,
+            'T': 10,
+            ' ': 2
+        }
+        let probabilityList = [];
+        for (const [key, value] of Object.entries(probability)) 
+        {
+            for(let i = 0; i < value; i++)
+                probabilityList.push(key)
+        }
+
+        for(let y = 0; y < this.arenaForegroundData.length; y++)
+        {
+            for(let x = 0; x < this.arenaForegroundData[y].length; x++)
+            {
+                let foreGround = this.arenaForegroundData[y][x];
+
+                if(foreGround == ' ')
+                {
+                    this.arenaBackgroundData[y][x] = '_'
+                }
+                else if(foreGround == 'X')
+                {
+                    let newTile = probabilityList[Math.floor((Math.random()*probabilityList.length))];
+                    this.arenaForegroundData[y][x] = newTile;
+                    this.arenaBackgroundData[y][x] = '_';
+                }
+            }  
+        }
+
+
         this.buildArena();
     }
 
@@ -192,6 +264,14 @@ export default class Arena
         return this.arenaForegroundData[y][x];
     }
 
+    isDestructible(x, y)
+    { 
+        let t = this.getTile(x, y);
+        if(t == ' ')
+            return false;
+        return this.tiles[t].destructible;
+    }
+
     setTile(x, y, newTile)
     {
         this.arenaForegroundData[y][x] = newTile;
@@ -229,8 +309,6 @@ export default class Arena
 
     buildArena() 
     {
-        this.batches = {};
-
         for(let y = 0; y < this.arenaForegroundData.length; y++)
         {
             for(let x = 0; x < this.arenaForegroundData[y].length; x++)

@@ -43,8 +43,8 @@ let explosionUpEffect = new Particle();
 
 const arena = new Arena();
 
-let player1Pos = [1.5, 0, 1.5]
-let player2Pos = [arena.arenaForegroundData.length - 1.5, 0, arena.arenaForegroundData[0].length -1.5]
+let player1Pos = [0, 0, 0]
+let player2Pos = [0, 0, 0]
 let lastAngle1 = 0
 let lastAngle2 = 0
 
@@ -53,6 +53,7 @@ const player1Inventory = {
     bootsSpeed: 4,
     detonationRange: 5,
     detonationTime: 3,
+    score: 0,
 }
 
 const player2Inventory = {
@@ -60,6 +61,7 @@ const player2Inventory = {
     bootsSpeed: 2.5,
     detonationRange: 1,
     detonationTime: 3,
+    score: 0,
 }
 
 let dummyText;
@@ -75,6 +77,9 @@ export async function Init()
     await renderer.Initialize();
     
     await arena.Initialize(resourceCache);
+
+    player1Pos = [1.5, 0, 1.5]
+    player2Pos = [arena.arenaForegroundData.length - 1.5, 0, arena.arenaForegroundData[0].length -1.5]
 
     dummyText = new Text();
     dummyText.string = "Omegalul";
@@ -92,7 +97,7 @@ export async function Init()
 
     player2HUD = new Text()
     player2HUD.string = ""
-    player2HUD.position = [canvas.width - 250, 100]
+    player2HUD.position = [canvas.width - 400, 100]
     player2HUD.color = [1, 1, 1]
     player2HUD.scale = 300
     fontGenerator.addText(player2HUD)
@@ -202,14 +207,6 @@ function explodeBomb(coords, radius, time) {
     arena.setTile(x, y, '_')
     
 
-    if(checkPlayerExploded([x + 0.5, 0, y + 0.5], player1Pos)) {
-        alert("Player 1 exploded")
-    }
-    
-    if(checkPlayerExploded([x + 0.5, 0, y + 0.5], player2Pos)) {
-        alert("Player 2 exploded")
-    }
-
     explosionEffect([x + 0.5, 0.5, y + 0.5], time)
 
     
@@ -224,8 +221,9 @@ function explodeBomb(coords, radius, time) {
             }
 
             let t = arena.getTile(newX, newY);
+            let destructible = arena.isDestructible(newX, newY);
 
-            if (t === 'T') {
+            if (destructible) {
                 arena.setTile(newX, newY, ' ');
                 explosionEffect([newX + 0.5, 0.5, newY + 0.5], time)
                 break
@@ -233,11 +231,11 @@ function explodeBomb(coords, radius, time) {
             else if (t === ' ') {
 
                 if(checkPlayerExploded([newX + 0.5, 0, newY + 0.5], player1Pos)) {
-                    alert("Player 1 exploded")
+                    player2Inventory.score++;
                 }
                 
                 if(checkPlayerExploded([newX + 0.5, 0, newY + 0.5], player2Pos)) {
-                    alert("Player 2 exploded")
+                    player1Inventory.score++;
                 }
 
                 explosionEffect([newX + 0.5, 0.5, newY + 0.5], time)
@@ -340,8 +338,8 @@ export function RenderFrame()
     dummyText.string = "Current time: " + time.toFixed(2);
     dummyText.color = HSVtoRGB(time * 0.1, 1.0, 1.0);
 
-    player1HUD.string = "Bombs left: " + player1Inventory.bombs
-    player2HUD.string = "Bombs left: " + player2Inventory.bombs
+    player1HUD.string = "Bombs left: " + player1Inventory.bombs + " Score: " + player1Inventory.score
+    player2HUD.string = "Bombs left: " + player2Inventory.bombs + " Score: " + player2Inventory.score
 
     powerUpEffect.position = [1.5, 0.4 + Math.sin(time * 1.5) * 0.2, 5.5];
     powerUpEffect.colorStart = HSVtoRGB(time * 0.2, 1.0, 1.0);
