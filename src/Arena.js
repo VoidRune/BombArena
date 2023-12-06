@@ -125,7 +125,7 @@ export default class Arena
         let bomb = new Tile();
         bomb.mesh = bombMesh
         bomb.texture = couldronTexture
-        bomb.collider = [0.2, 0.2, 0.8, 0.8]
+        bomb.collider = [0.3, 0.3, 0.7, 0.7]
         this.tiles['B'] = bomb
 
         let batch = new InstancedBatch();
@@ -136,21 +136,17 @@ export default class Arena
 
         this.arenaForegroundData = [
             [ '#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#' ],
-            [ '#',' ',' ','X','X','X','X','X','X','X','X','X','X','X',' ',' ','#' ],
+            [ '#',' ',' ','X','X','X','X',' ','X',' ','X','X','X','X',' ',' ','#' ],
             [ '#',' ','#','X','#','X','#','X','#','X','#','X','#','X','#',' ','#' ],
-            [ '#','X','X','X','X',' ','X','X','X','X','X',' ','X','X','X','X','#' ],
-            [ '#','X','#',' ','#','X','#','X','#','X','#','X','#',' ','#','X','#' ],
-            [ '#','X',' ',' ',' ','X','X','X','X','X','X','X',' ',' ',' ','X','#' ],
-            [ '#','X','#',' ','#','X','#','X','#','X','#','X','#',' ','#','X','#' ],
-            [ '#','X','X','X','X','X','X',' ','#',' ','X','X','X','X','X','X','#' ],
+            [ '#','X','X','X','X','X','X','X','X','X','X','X','X','X','X','X','#' ],
+            [ '#','X','#','X','X',' ','#','X','#','X','#',' ','X','X','#','X','#' ],
+            [ '#','X','X',' ','X','X','X',' ','#',' ','X','X','X',' ','X','X','#' ],
             [ '#','X','#','X','#','X','#','#','#','#','#','X','#','X','#','X','#' ],
-            [ '#','X','X','X','X','X','X',' ','#',' ','X','X','X','X','X','X','#' ],
-            [ '#','X','#',' ','#','X','#','X','#','X','#','X','#',' ','#','X','#' ],
-            [ '#','X',' ',' ',' ','X','X','X','X','X','X','X',' ',' ',' ','X','#' ],
-            [ '#','X','#',' ','#','X','#','X','#','X','#','X','#',' ','#','X','#' ],
-            [ '#','X','X','X','X',' ','X','X','X','X','X',' ','X','X','X','X','#' ],
+            [ '#','X','X',' ','X','X','X',' ','#',' ','X','X','X',' ','X','X','#' ],
+            [ '#','X','#','X','X',' ','#','X','#','X','#',' ','X','X','#','X','#' ],
+            [ '#',' ','X','X','X','X','X','X','X','X','X','X','X','X','X','X','#' ],
             [ '#',' ','#','X','#','X','#','X','#','X','#','X','#','X','#',' ','#' ],
-            [ '#',' ',' ','X','X','X','X','X','X','X','X','X','X','X',' ',' ','#' ],
+            [ '#',' ',' ','X',' ','X','X',' ','X',' ','X','X','X','X',' ',' ','#' ],
             [ '#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#' ]];
 
         this.arenaBackgroundData = Array(this.arenaForegroundData.length);
@@ -195,7 +191,7 @@ export default class Arena
         this.buildArena();
     }
 
-    collideCircle(position, velocity, radius) 
+    collideCircle(position, velocity, radius, excludeCollision) 
     {
         let currPos = vec2.fromValues(position[0], position[2]);
         let nextPos = vec2.fromValues(position[0] + velocity[0], position[2] + velocity[2]);
@@ -214,6 +210,9 @@ export default class Arena
         {
             for (vCell[0] = vAreaTL[0]; vCell[0] <= vAreaBR[0]; vCell[0]++)
             {
+                if(vCell[0] == excludeCollision[0] && vCell[1] == excludeCollision[1])
+                    continue;
+
                 let tile = this.arenaForegroundData[vCell[1]][vCell[0]];
                 if(this.tiles[tile] == undefined)
                     continue;
@@ -235,21 +234,7 @@ export default class Arena
                         
                         if (fOverlap > 0.0)
                         {
-                            if(isBomb)
-                            {
-                                let x = vCell[1] + 0.5
-                                let y = vCell[0] + 0.5
-                                let cX = currPos[1] - x
-                                let cY = currPos[0] - y
-                                let nX = nextPos[1] - x
-                                let nY = nextPos[0] - y
-                                if(nX*nX+nY*nY > cX*cX+cY*cY)
-                                {
-                                    fOverlap *= 0.05;
-                                }
-                            }
                             vec2.sub(nextPos, nextPos, vec3.scale(vec2.create(), vec2.normalize(vec2.create(), vRayToNearest), fOverlap));
-
                         }
                     }
                 }

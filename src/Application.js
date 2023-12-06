@@ -51,17 +51,19 @@ let lastAngle2 = 0
 const player1Inventory = {
     bombs: 10,
     bootsSpeed: 4,
-    detonationRange: 5,
+    detonationRange: 10,
     detonationTime: 3,
     score: 0,
+    lastPlaced: [-1, -1]
 }
 
 const player2Inventory = {
     bombs: 2,
     bootsSpeed: 2.5,
-    detonationRange: 1,
+    detonationRange: 10,
     detonationTime: 3,
     score: 0,
+    lastPlaced: [-1, -1]
 }
 
 let dummyText;
@@ -79,7 +81,7 @@ export async function Init()
     await arena.Initialize(resourceCache);
 
     player1Pos = [1.5, 0, 1.5]
-    player2Pos = [arena.arenaForegroundData.length - 1.5, 0, arena.arenaForegroundData[0].length -1.5]
+    player2Pos = [arena.arenaForegroundData[0].length - 1.5, 0, arena.arenaForegroundData.length -1.5]
 
     dummyText = new Text();
     dummyText.string = "Omegalul";
@@ -164,6 +166,7 @@ function placeBomb(coords, time, playerInventory) {
         return
     }
     playerInventory.bombs--
+    playerInventory.lastPlaced = [coords[0], coords[1]];
     bombs.push({
         coords: coords, 
         radius: playerInventory.detonationRange,
@@ -313,7 +316,10 @@ export function RenderFrame()
     vec3.normalize(velocity1, velocity1);
     vec3.scale(velocity1, velocity1, player1Inventory.bootsSpeed * dt);
     
-    arena.collideCircle(player1Pos, velocity1, 0.4);
+    arena.collideCircle(player1Pos, velocity1, 0.4, player1Inventory.lastPlaced);
+
+    if(Math.floor(player1Pos[0]) != player1Inventory.lastPlaced[0] || Math.floor(player1Pos[2]) != player1Inventory.lastPlaced[1])
+        player1Inventory.lastPlaced = [-1, -1];
 
     let velocity2 = [0, 0, 0];
     if (input.keys['ArrowRight']) { velocity2[0] += 1; }
@@ -333,7 +339,9 @@ export function RenderFrame()
     vec3.normalize(velocity2, velocity2);
     vec3.scale(velocity2, velocity2, player2Inventory.bootsSpeed * dt);
     
-    arena.collideCircle(player2Pos, velocity2, 0.4);
+    arena.collideCircle(player2Pos, velocity2, 0.4, player2Inventory.lastPlaced);
+    if(Math.floor(player2Pos[0]) != player2Inventory.lastPlaced[0] || Math.floor(player2Pos[2]) != player2Inventory.lastPlaced[1])
+        player2Inventory.lastPlaced = [-1, -1];
 
     dummyText.string = "Current time: " + time.toFixed(2);
     dummyText.color = HSVtoRGB(time * 0.1, 1.0, 1.0);
