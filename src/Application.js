@@ -182,10 +182,6 @@ export async function Init()
     }
     batches.push(crystalBatch);
 
-    //crystal2Batch.setMesh(crystal2);
-    //crystal2Batch.setTexture(crystal2Texture);
-    //crystal2Batch.addInstance([18, 2, 10]);
-    //batches.push(crystal2Batch);
 
     for (const [key, value] of Object.entries(arena.batches)) 
     {
@@ -484,18 +480,18 @@ export function RenderFrame()
     particleFrameCount++;
     if(particleFrameCount >= 8)
     {
-        let fire = new Particle();
-        fire.position = [Math.random() * 17, 0, Math.random() * 13];
-        fire.velocity = [Math.random() * 0.3, Math.random() * 1.0, Math.random() * 0.3];
-        fire.colorStart = [Math.random(), Math.random(), Math.random()];
-        fire.colorEnd = [Math.random(), Math.random(), Math.random()];
-        fire.radiusStart = Math.random() * 0.6 + 0.1;
-        fire.radiusEnd = 0.0;
-        fire.rotationStart = Math.random() * 6.283;
-        fire.rotationEnd = Math.random() * 6.283;
-        fire.texCoord = [2 / 4, 5 / 8, 3 / 4, 7 / 8];
-        fire.lifetime = Math.random() * 2.6 + 0.3;
-        particleSystem.emit(time, fire);
+        let ambientParticle = new Particle();
+        ambientParticle.position = [Math.random() * arena.arenaForegroundData[0].length, 0, Math.random() * arena.arenaForegroundData.length];
+        ambientParticle.velocity = [Math.random() * 0.5, Math.random() * 2.0, Math.random() * 0.5];
+        ambientParticle.colorStart = [Math.random(), Math.random(), Math.random()];
+        ambientParticle.colorEnd = [Math.random(), Math.random(), Math.random()];
+        ambientParticle.radiusStart = Math.random() * 0.6 + 0.1;
+        ambientParticle.radiusEnd = Math.random() * 0.4;
+        ambientParticle.rotationStart = Math.random() * 6.283;
+        ambientParticle.rotationEnd = Math.random() * 6.283;
+        ambientParticle.texCoord = [2 / 4, 5 / 8, 3 / 4, 7 / 8];
+        ambientParticle.lifetime = Math.random() * 2.6 + 0.3;
+        particleSystem.emit(time, ambientParticle);
         particleFrameCount = 0;
     }
 

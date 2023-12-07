@@ -8,7 +8,7 @@ export class PlayerInventory {
 }
 
 export default class Player {
-    constructor(id=0, startPosition=[0, 0, 0], position=[0, 0, 0], angle=0, speed=2, inventory=new PlayerInventory(), score=0, lives=3) {
+    constructor(id=0, startPosition=[0, 0, 0], position=[0, 0, 0], angle=0, speed=2.5, inventory=new PlayerInventory(), score=0, lives=3) {
         this.id = id
         this.position=position
         this.speed = speed
@@ -19,7 +19,7 @@ export default class Player {
         this.startPosition = startPosition
     }
     getSpeed() {
-        return Math.min(this.speed + (this.inventory.speedPowerup * 0.15), 6)
+        return Math.min(this.speed + (this.inventory.speedPowerup * 0.2), 6)
     }
     getBombRadius() {
         return 1 + (this.inventory.radiusPowerup)
