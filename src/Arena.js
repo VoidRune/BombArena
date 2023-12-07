@@ -264,7 +264,7 @@ export default class Arena
         this.arenaChanged = true;
     }
 
-    updateArena() 
+    updateArena()
     {
         if(!this.arenaChanged)
             return;
