@@ -59,7 +59,6 @@ fn fragmentMain(input: FragmentInput) -> FragmentOutput
     var ambient = textureSample(texture, textureSampler, input.uv) * lightingFactor;
     var specular = pow(max(dot(reflect(normalize(input.camDir), normal), normalize(-input.lightDir)), 0.0), 32) * lightingFactor;
 
-    let phong = reflect(input.lightDir, normal);
 
     var output: FragmentOutput;
     output.pos = input.pos;

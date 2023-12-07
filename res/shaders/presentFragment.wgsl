@@ -7,23 +7,30 @@ struct CameraData {
     projection: mat4x4<f32>,
     invView: mat4x4<f32>,
     invProjection: mat4x4<f32>,
+    light: mat4x4<f32>,
+    lightPos: vec4<f32>,
+    ortho: mat4x4<f32>,
+	timeData: vec4<f32>,
 };
 
 @group(0) @binding(0) var<uniform> cam: CameraData;
 
-@group(1) @binding(0) var mySampler: sampler;
-@group(1) @binding(1) var positionAttachment: texture_2d<f32>;
-@group(1) @binding(2) var colorAttachment: texture_2d<f32>;
-@group(1) @binding(3) var normalAttachment: texture_2d<f32>;
-@group(1) @binding(4) var overlayAttachment: texture_2d<f32>;
+@group(1) @binding(0) var pointSampler: sampler;
+@group(1) @binding(1) var linearSampler: sampler;
+@group(1) @binding(2) var positionAttachment: texture_2d<f32>;
+@group(1) @binding(3) var colorAttachment: texture_2d<f32>;
+@group(1) @binding(4) var normalAttachment: texture_2d<f32>;
+@group(1) @binding(5) var overlayAttachment: texture_2d<f32>;
+@group(1) @binding(6) var galaxyTexture: texture_2d<f32>;
 
 @fragment
-@diagnostic(off,derivative_uniformity) fn fragmentMain(input: FragmentInput) -> @location(0) vec4f 
+@diagnostic(off,derivative_uniformity) 
+fn fragmentMain(input: FragmentInput) -> @location(0) vec4f 
 {
-    var position = textureSample(positionAttachment, mySampler, input.uv);
-    var color = textureSample(colorAttachment, mySampler, input.uv);
-    var normal = textureSample(normalAttachment, mySampler, input.uv);
-	var overlay = textureSample(overlayAttachment, mySampler, input.uv);
+    var position = textureSample(positionAttachment, pointSampler, input.uv);
+    var color = textureSample(colorAttachment, pointSampler, input.uv);
+    var normal = textureSample(normalAttachment, pointSampler, input.uv);
+	var overlay = textureSample(overlayAttachment, pointSampler, input.uv);
 	var outColor = color * (1 - overlay.a) + overlay;
     var reflectivity = 0.8 * (1 - overlay.a) * (1 - overlay.a);
 	//if(normal.y == 1.0)
@@ -31,7 +38,11 @@ struct CameraData {
 	//	reflectivity = 0.4 * (1 - overlay.a) * (1 - overlay.a);
 	//}
 
-    if (reflectivity < 0.005)
+	var size: vec2f = vec2f(textureDimensions(positionAttachment));
+	size /= size.y;
+	outColor += textureSample(galaxyTexture, linearSampler, input.uv * size + cam.timeData.x * 0.1) * (1.0 - normal.a);
+
+    if (reflectivity < 0.005 || normal.a == 0)
     {
 		return outColor;
 	}
@@ -73,7 +84,7 @@ struct CameraData {
 			return outColor;
 		}
 
-		var pos = textureSample(positionAttachment, mySampler, currUv);
+		var pos = textureSample(positionAttachment, pointSampler, currUv);
 
 		if(pos.x == 0 && pos.y == 0 && pos.z == 0)
 		{
@@ -86,7 +97,7 @@ struct CameraData {
 		var lb = b.x * b.x + b.y * b.y + b.z * b.z;
 		if(lb >= la && lb - la <= stepLen)
 		{
-			var reflection = textureSample(colorAttachment, mySampler, currUv);
+			var reflection = textureSample(colorAttachment, pointSampler, currUv);
 			return mix(outColor, reflection, reflectivity);
 		}
 	}

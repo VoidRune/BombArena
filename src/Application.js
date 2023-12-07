@@ -30,17 +30,19 @@ var cam = new Camera(canvas, input);
 var renderData = new RenderData();
 var player1Batch = new InstancedBatch();
 let player2Batch = new InstancedBatch()
-var arenaEnvironmentBatch = new InstancedBatch();
+var crystalBatch = new InstancedBatch();
 var batches = [];
 
+let crystalPositions = [
+    [-1, 1, 3],
+    [-1, 1, 8],
+    [5, 1, 16],
+    [13, 1, 16],
+    [18, 1, 3],
+    [18, 1, 8],
+];
 
-let glowEffect1 = new Particle();
-let glowEffect2 = new Particle();
-
-let powerUpEffect = new Particle();
-let BombUpEffect = new Particle();
-let SpeedUpEffect = new Particle();
-let explosionUpEffect = new Particle();
+let particleFrameCount = 0;
 
 const arena = new Arena();
 
@@ -169,12 +171,22 @@ export async function Init()
     player2HUD.scale = 300
     fontGenerator.addText(player2HUD)
     
-    let environment = resourceCache.addMesh(await loadMesh('/res/meshes/environment.obj'));
+    let crystal = resourceCache.addMesh(await loadMesh('/res/meshes/crystal.obj'));
+    let crystalTexture = resourceCache.addMaterial(await loadImageRGBA('/res/textures/CrystalShort/albedo.jpeg'), await loadImageRGBA('/res/textures/CrystalShort/normal.png'));
 
-    arenaEnvironmentBatch.setMesh(environment);
-    arenaEnvironmentBatch.addInstance([0, 0, 0]);
-    
-    batches.push(arenaEnvironmentBatch);
+    crystalBatch.setMesh(crystal);
+    crystalBatch.setTexture(crystalTexture);
+    for(let i = 0; i < crystalPositions.length; i++)
+    {
+        crystalBatch.addInstance([0, 0, 0]);
+    }
+    batches.push(crystalBatch);
+
+    //crystal2Batch.setMesh(crystal2);
+    //crystal2Batch.setTexture(crystal2Texture);
+    //crystal2Batch.addInstance([18, 2, 10]);
+    //batches.push(crystal2Batch);
+
     for (const [key, value] of Object.entries(arena.batches)) 
     {
         batches.push(value);
@@ -195,19 +207,6 @@ export async function Init()
 
     batches.push(player1Batch);
     batches.push(player2Batch)
-
-
-    powerUpEffect.position = [2, 2, 2];
-    powerUpEffect.lifetime = 99999999;
-    powerUpEffect.texCoord = [0 / 8, 0 / 8, 1 / 8, 1 / 8];
-    particleSystem.emit(0, powerUpEffect);
-
-    /*glowEffect1.lifetime = 99999999;
-    glowEffect1.texCoord = [0 / 8, 1 / 8, 4 / 8, 5 / 8];
-    glowEffect2.lifetime = 99999999;
-    glowEffect2.texCoord = [0 / 8, 1 / 8, 4 / 8, 5 / 8];
-    particleSystem.emit(0, glowEffect1);
-    particleSystem.emit(0, glowEffect2);*/
 }
 
 function placeBomb(player, time) {
@@ -283,8 +282,8 @@ async function explodeBomb(coords, radius, time) {
             let newX = x + dx * i;
             let newY = y + dy * i;
 
-            if (newX < 0 || newX >= arena.arenaForegroundData.length ||
-                newY < 0 || newY >= arena.arenaForegroundData[newX].length) {
+            if (newX < 0 || newX >= arena.arenaForegroundData[newY].length ||
+                newY < 0 || newY >= arena.arenaForegroundData.length) {
                 break
             }
 
@@ -481,35 +480,24 @@ export function RenderFrame()
     player1HUD.string = "Bombs: " + player1.getBombs() + " Score: " + player1.score + " Lives: " + player1.lives
     player2HUD.string = "Bombs: " + player2.getBombs() + " Score: " + player2.score + " Lives: " + player2.lives
 
-    powerUpEffect.position = [1.5, 0.4 + Math.sin(time * 1.5) * 0.2, 5.5];
-    powerUpEffect.colorStart = HSVtoRGB(time * 0.2, 1.0, 1.0);
-    powerUpEffect.colorEnd = powerUpEffect.colorStart;
-    powerUpEffect.radiusStart = 0.4;
-    powerUpEffect.radiusEnd = powerUpEffect.radiusStart;
-    /*
-    glowEffect1.position = [player1.position[0], 0.75, player1.position[2]];
-    glowEffect1.radiusStart = 1.5 + Math.sin(time) * 0.5;
-    glowEffect1.radiusEnd = glowEffect1.radiusStart;
-    glowEffect1.rotationStart = time * 0.4;
-    glowEffect1.rotationEnd = glowEffect1.rotationStart;
-    glowEffect2.position = [player1.position[0], 0.75, player1.position[2]];
-    glowEffect2.radiusStart = glowEffect1.radiusStart;
-    glowEffect2.radiusEnd = glowEffect2.radiusStart;
-    glowEffect2.rotationStart = -time * 0.4;
-    glowEffect2.rotationEnd = glowEffect2.rotationStart;*/
-    let fire = new Particle();
-    fire.position = [7.5, 0.8, 7.5];
-    fire.velocity = [(Math.random() - 0.5) * 2.0, (Math.random() - 0.5) * 2.0 + 2, (Math.random() - 0.5) * 2.0];
-    fire.colorStart = [0.8, 0.5, 0.2];
-    fire.colorEnd = [1, 0.2, 0.2];
-    fire.radiusStart = Math.random() * 0.3 + 0.1;
-    fire.radiusEnd = 0.0;
-    fire.rotationStart = Math.random() * 6.283;
-    fire.rotationEnd = Math.random() * 6.283;
-    let fireX = Math.floor(Math.random() * 4);
-    fire.texCoord = [fireX / 8, 7 / 8, (fireX + 1) / 8, 8 / 8];
-    fire.lifetime = Math.random() * 0.3 + 0.3;
-    particleSystem.emit(time, fire);
+
+    particleFrameCount++;
+    if(particleFrameCount >= 8)
+    {
+        let fire = new Particle();
+        fire.position = [Math.random() * 17, 0, Math.random() * 13];
+        fire.velocity = [Math.random() * 0.3, Math.random() * 1.0, Math.random() * 0.3];
+        fire.colorStart = [Math.random(), Math.random(), Math.random()];
+        fire.colorEnd = [Math.random(), Math.random(), Math.random()];
+        fire.radiusStart = Math.random() * 0.6 + 0.1;
+        fire.radiusEnd = 0.0;
+        fire.rotationStart = Math.random() * 6.283;
+        fire.rotationEnd = Math.random() * 6.283;
+        fire.texCoord = [2 / 4, 5 / 8, 3 / 4, 7 / 8];
+        fire.lifetime = Math.random() * 2.6 + 0.3;
+        particleSystem.emit(time, fire);
+        particleFrameCount = 0;
+    }
 
     // If the key E is pressed down
     if (input.keys['KeyE'] && !keyEDown) 
@@ -549,6 +537,13 @@ export function RenderFrame()
 
     //console.log(averagePosition, distanceOfPositions);
 
+    for(let i = 0; i < crystalPositions.length; i++)
+    {
+        let pos = crystalPositions[i];
+        pos[1] = Math.sin(pos[0] - pos[2] + time);
+        crystalBatch.updateInstance(i, pos, [0, time * 20, 0]);
+    }
+
     renderData.reset();
     renderData.pushMatrix(cam.viewMatrix);
     renderData.pushMatrix(cam.projectionMatrix);
@@ -565,7 +560,8 @@ export function RenderFrame()
     renderData.pushVec4(lightDirection);
     let uiMatrix = mat4.ortho(mat4.create(), 0, canvas.width, 0, canvas.height, -10, 10);
     renderData.pushMatrix(uiMatrix);
-
+    let timeData = [time, 0, 0, 0];
+    renderData.pushVec4(timeData);
 
     renderData.instanceBatches = batches;
 

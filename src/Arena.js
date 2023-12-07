@@ -135,7 +135,7 @@ export default class Arena
         this.batches['B'] = batch;
 
         // Temporarily removed for testing purposes
-        /*this.arenaForegroundData = [
+        this.arenaForegroundData = [
             [ '#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#','#' ],
             [ '#',' ',' ','X','X','X','X',' ','X',' ','X','X','X','X',' ',' ','#' ],
             [ '#',' ','#','X','#','X','#','X','#','X','#','X','#','X','#',' ','#' ],
@@ -186,7 +186,7 @@ export default class Arena
                     this.arenaBackgroundData[y][x] = '_';
                 }
             }  
-        }*/
+        }
 
 
         this.buildArena();
@@ -252,7 +252,7 @@ export default class Arena
 
     isDestructible(x, y)
     { 
-        let t = this.getTile(x, y);
+        let t = this.arenaForegroundData[y][x];
         if(t == ' ')
             return false;
         return this.tiles[t].destructible;

@@ -264,6 +264,9 @@ export default class Renderer
             magFilter: 'nearest',
             minFilter: 'nearest',
 
+            addressModeU: 'repeat',
+            addressModeV: 'repeat',
+
             lodMinClamp: 1,
             lodMaxClamp: 64,
         });
@@ -271,6 +274,9 @@ export default class Renderer
         let linearSampler = device.createSampler({
             magFilter: 'linear',
             minFilter: 'linear',
+
+            addressModeU: 'repeat',
+            addressModeV: 'repeat',
 
             lodMinClamp: 1,
             lodMaxClamp: 64,
@@ -619,6 +625,9 @@ export default class Renderer
             }],
         });
 
+        let galaxyImageData = await loadImageRGBA('/res/textures/galaxy.jpg');
+        let galaxyImage = createTexture(device, galaxyImageData, false);
+
         this.finalCompositionBindGroup = device.createBindGroup({
             label: "Present",
             layout: this.finalCompositionPipeline.getBindGroupLayout(1),
@@ -629,19 +638,27 @@ export default class Renderer
             },
             {
                 binding: 1,
-                resource: this.positionAttachment.createView()
+                resource: linearSampler
             },
             {
                 binding: 2,
-                resource: this.colorAttachment.createView()
+                resource: this.positionAttachment.createView()
             },
             {
                 binding: 3,
-                resource: this.normalAttachment.createView()
+                resource: this.colorAttachment.createView()
             },
             {
                 binding: 4,
+                resource: this.normalAttachment.createView()
+            },
+            {
+                binding: 5,
                 resource: this.overlayAttachment.createView()
+            },
+            {
+                binding: 6,
+                resource: galaxyImage.createView()
             }],
         });
     }
@@ -697,13 +714,13 @@ export default class Renderer
                 },
                 {
                     view: this.colorAttachment.createView(),
-                    clearValue: { r: 0.1, g: 0.4, b: 0.8, a: 1 },
+                    clearValue: { r: 0, g: 0, b: 0, a: 0 },
                     loadOp: "clear",
                     storeOp: "store",
                 },
                 {
                     view: this.normalAttachment.createView(),
-                    clearValue: { r: 0, g: 0, b: 0, a: 1 },
+                    clearValue: { r: 0, g: 0, b: 0, a: 0 },
                     loadOp: "clear",
                     storeOp: "store",
                 }],
@@ -807,7 +824,7 @@ export default class Renderer
             const finalCompositionPass = encoder.beginRenderPass({
                 colorAttachments: [{
                 view: this.context.getCurrentTexture().createView(),
-                clearValue: { r: 0.1, g: 0.4, b: 0.8, a: 1 },
+                clearValue: { r: 0, g: 0, b: 0, a: 0 },
                 loadOp: "clear",
                 storeOp: "store",
                 }],

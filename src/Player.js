@@ -1,5 +1,5 @@
 export class PlayerInventory {
-    constructor(bombs=2, speedPowerup=0, radiusPowerup=0, lastPlaced=[-1, -1]) {
+    constructor(bombs=1, speedPowerup=0, radiusPowerup=0, lastPlaced=[-1, -1]) {
         this.bombs = bombs
         this.speedPowerup = speedPowerup
         this.radiusPowerup = radiusPowerup
@@ -8,7 +8,7 @@ export class PlayerInventory {
 }
 
 export default class Player {
-    constructor(id=0, startPosition=[0, 0, 0], position=[0, 0, 0], angle=0, speed=2.5, inventory=new PlayerInventory(), score=0, lives=3) {
+    constructor(id=0, startPosition=[0, 0, 0], position=[0, 0, 0], angle=0, speed=2, inventory=new PlayerInventory(), score=0, lives=3) {
         this.id = id
         this.position=position
         this.speed = speed
@@ -19,19 +19,19 @@ export default class Player {
         this.startPosition = startPosition
     }
     getSpeed() {
-        return this.speed + (this.inventory.speedPowerup * 2.5)
+        return Math.min(this.speed + (this.inventory.speedPowerup * 0.15), 6)
     }
     getBombRadius() {
-        return 3 + (this.inventory.radiusPowerup * 3)
+        return 1 + (this.inventory.radiusPowerup)
     }
     getBombs() {
         return this.inventory.bombs
     }
     addSpeedPowerup() {
-        this.inventory.speedPowerup = 1
+        this.inventory.speedPowerup += 1
     }
     addRadiusPowerup() {
-        this.inventory.radiusPowerup = 1
+        this.inventory.radiusPowerup += 1
     }
     addBombPowerup() {
         this.inventory.bombs++
@@ -40,7 +40,7 @@ export default class Player {
         this.inventory = new PlayerInventory()
     }
     getDetonationTime() {
-        return 5
+        return 2.5
     }
     kill() {
         this.lives--
