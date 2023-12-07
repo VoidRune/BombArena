@@ -118,10 +118,12 @@ function checkPowerups() {
             dirty = true
             powerUp.particle.lifetime = 0
             player1.addPowerup(powerUp.type)
+            playSound("powerup")
         } else if (checkPlayerExploded(powerUp.position, player2.position)) {
             dirty = true
             powerUp.particle.lifetime = 0
             player2.addPowerup(powerUp.type)
+            playSound("powerup")
         } else {
             newPowerUps.push(powerUp)
         }
@@ -244,11 +246,11 @@ function checkBombs(time) {
     }
 }
 
-function explodeBomb(coords, radius, time) {
+async function explodeBomb(coords, radius, time) {
     
     let [x, y] = coords;
 
-    const directions = [
+    let directions = [
         [ 0,-1],
         [ 0, 1],
         [-1, 0],
@@ -258,6 +260,8 @@ function explodeBomb(coords, radius, time) {
     arena.setTile(x, y, ' ')
 
     explosionEffect([x + 0.5, 0.5, y + 0.5], time)
+
+    playSound("explosion")
 
     let player1Died = false
     let player2Died = false
@@ -269,9 +273,13 @@ function explodeBomb(coords, radius, time) {
     if(playersDied >= 2) {
         player2Died = true
     }
+    executePlayerDeaths(player1Died, player2Died)
+
     
-    for (let [dx, dy] of directions) {
-        for (let i = 1; i <= radius; i++) {
+    for (let i = 1; i <= radius; i++) {
+        let newDirections = []
+        for (let [dx, dy] of directions) {
+            
             let newX = x + dx * i;
             let newY = y + dy * i;
 
@@ -286,30 +294,40 @@ function explodeBomb(coords, radius, time) {
             if (destructible) {
                 arena.setTile(newX, newY, ' ');
                 explosionEffect([newX + 0.5, 0.5, newY + 0.5], time)
-                break
             }
             else if (t === ' ') {
                 playersDied = checkPlayerDeaths(newX, newY)
                 if(playersDied % 2  === 1) {
-                    player1Died = true
+                    if(!player1Died) {
+                        player1Died = true
+                        executePlayerDeaths(true, false)
+                    }
                 }
                 if(playersDied >= 2) {
-                    player2Died = true
+                    if(!player2Died) {
+                        player2Died = true
+                        executePlayerDeaths(false, true)
+
+                    }
                 }
 
 
                 explosionEffect([newX + 0.5, 0.5, newY + 0.5], time)
 
-                continue
+                newDirections.push([dx, dy])
             }
-            break
         }
+        directions = newDirections
+        await delay(100)
     }
-
-    executePlayerDeaths(player1Died, player2Died)
 
     arena.updateArena();
 }
+
+function delay(timeout) {
+    return new Promise(resolve => setTimeout(resolve, timeout));
+}
+
 
 function checkPlayerDeaths(x, y) {
     let result = 0
@@ -341,16 +359,21 @@ function executePlayerDeaths(player1Died, player2Died) {
 
 }
 
-function resetPlayers() {
-    player1.reset()
-    player2.reset()
-}
-
 function checkPlayerExploded(bombPos, playerPos) {
     if(Math.abs(bombPos[0] - playerPos[0]) < 0.5 && Math.abs(bombPos[2] - playerPos[2]) < 0.5) {
         return true
     }
     return false
+}
+
+function playSound(sound) {
+    let explosionSound = new Audio('/res/audio/' + sound + '.mp3')
+    explosionSound.play()
+
+    explosionSound.onended = function() {
+        explosionSound.src = ''
+        explosionSound = null
+    };
 }
 
 
@@ -379,6 +402,18 @@ function HSVtoRGB(h, s, v) {
 let keyEDown = false
 let keyEnterDown = false
 
+let paused = false
+
+export function pause() {
+    paused = true
+}
+
+export function unpause() {
+    lastTime = performance.now() / 1000
+    paused = false
+    requestAnimationFrame(RenderFrame);
+}
+
 export function RenderFrame()
 {
     //canvas.width  = window.innerWidth;
@@ -387,8 +422,6 @@ export function RenderFrame()
     let time = performance.now() / 1000;
     let dt = time - lastTime;
     lastTime = time;
-
-    cam.update(dt);
 
     checkPowerups()
     if(time > timeForNewPowerup && powerUps.length < 5) {
@@ -512,6 +545,8 @@ export function RenderFrame()
     distanceOfPositions = Math.sqrt(distanceOfPositions)
 
     cam.updatePosition(averagePosition, distanceOfPositions)
+    cam.update(dt);
+
     //console.log(averagePosition, distanceOfPositions);
 
     renderData.reset();
@@ -538,7 +573,9 @@ export function RenderFrame()
     fontGenerator.update();
     renderer.Render(renderData);
 
-    requestAnimationFrame(RenderFrame);
+    if(!paused) {
+        requestAnimationFrame(RenderFrame);
+    }
 }
 
 function explosionEffect(position, time) {

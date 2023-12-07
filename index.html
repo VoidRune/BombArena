@@ -8,6 +8,12 @@
     </style>
 </head>
 <body>
+    <div id="cover" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; flex-direction: column;">
+        <h1>Bomb Arena</h1>
+        <p id="statusIndicator">Loading...</p>
+        <button id="startButton" style="display:none">Start game</button>
+
+    </div>
     <canvas width="1280" height="720"></canvas>
     <canvas id="hiddenCanvas" width="1280" height="720" style="opacity: 0;"></canvas>
     <script type="module" src="src/main.js"></script>
