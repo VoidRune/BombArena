@@ -270,7 +270,7 @@ async function explodeBomb(coords, radius, time) {
     }
     executePlayerDeaths(player1Died, player2Died)
 
-    
+    let delayInSec = 0.1;
     for (let i = 1; i <= radius; i++) {
         let newDirections = []
         for (let [dx, dy] of directions) {
@@ -288,7 +288,7 @@ async function explodeBomb(coords, radius, time) {
 
             if (destructible) {
                 arena.setTile(newX, newY, ' ');
-                explosionEffect([newX + 0.5, 0.5, newY + 0.5], time)
+                explosionEffect([newX + 0.5, 0.5, newY + 0.5], time + i * delayInSec)
             }
             else if (t === ' ') {
                 playersDied = checkPlayerDeaths(newX, newY)
@@ -307,13 +307,14 @@ async function explodeBomb(coords, radius, time) {
                 }
 
 
-                explosionEffect([newX + 0.5, 0.5, newY + 0.5], time)
+                explosionEffect([newX + 0.5, 0.5, newY + 0.5], time + i * delayInSec)
 
                 newDirections.push([dx, dy])
             }
         }
+        arena.updateArena();
         directions = newDirections
-        await delay(100)
+        await delay(delayInSec * 1000)
     }
 
     arena.updateArena();

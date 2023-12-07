@@ -40,7 +40,7 @@ export default class Player {
         this.inventory = new PlayerInventory()
     }
     getDetonationTime() {
-        return 2.5
+        return 2
     }
     kill() {
         this.lives--
