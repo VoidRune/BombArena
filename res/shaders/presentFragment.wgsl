@@ -40,7 +40,7 @@ fn fragmentMain(input: FragmentInput) -> @location(0) vec4f
 
 	var size: vec2f = vec2f(textureDimensions(positionAttachment));
 	size /= size.y;
-	outColor += textureSample(galaxyTexture, linearSampler, input.uv * size + cam.timeData.x * 0.1) * (1.0 - normal.a);
+	outColor += textureSample(galaxyTexture, linearSampler, input.uv * size + cam.timeData.x * 0.02) * (1.0 - normal.a);
 
     if (reflectivity < 0.005 || normal.a == 0)
     {

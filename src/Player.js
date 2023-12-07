@@ -37,7 +37,11 @@ export default class Player {
         this.inventory.bombs++
     }
     resetInventory() {
-        this.inventory = new PlayerInventory()
+        //this.inventory = new PlayerInventory()
+        // Half the powerups on death
+        this.inventory.bombs = Math.ceil(this.inventory.bombs)
+        this.inventory.speedPowerup = Math.ceil(this.inventory.speedPowerup)
+        this.inventory.radiusPowerup = Math.ceil(this.inventory.radiusPowerup)
     }
     getDetonationTime() {
         return 2
