@@ -120,12 +120,12 @@ function checkPowerups() {
             dirty = true
             powerUp.particle.lifetime = 0
             player1.addPowerup(powerUp.type)
-            playSound("powerup")
+            playSound("powerup", 0.3)
         } else if (checkPlayerExploded(powerUp.position, player2.position)) {
             dirty = true
             powerUp.particle.lifetime = 0
             player2.addPowerup(powerUp.type)
-            playSound("powerup")
+            playSound("powerup", 0.3)
         } else {
             newPowerUps.push(powerUp)
         }
@@ -147,8 +147,10 @@ export async function Init()
 
     player1.position = [1.5, 0, 1.5]
     player1.startPosition = [1.5, 0, 1.5]
+    player1.inventory.bombColor = [1, 0, 0]
     player2.position = [arena.arenaForegroundData[0].length - 1.5, 0, arena.arenaForegroundData.length -1.5]
     player2.startPosition = [arena.arenaForegroundData[0].length - 1.5, 0, arena.arenaForegroundData.length -1.5]
+    player2.inventory.bombColor = [0, 0, 1]
 
     dummyText = new Text();
     dummyText.string = "Omegalul";
@@ -228,7 +230,7 @@ function checkBombs(time) {
     bombs.forEach((bomb) => {
         if (bomb.time < time) {
             dirty = true
-            explodeBomb(bomb.coords, bomb.radius, time);
+            explodeBomb(bomb, time);
             arena.setTile(bomb.coords[0], bomb.coords[1], ' ')
             bomb.playerInventory.bombs++
         } else {
@@ -241,9 +243,9 @@ function checkBombs(time) {
     }
 }
 
-async function explodeBomb(coords, radius, time) {
+async function explodeBomb(bomb, time) {
     
-    let [x, y] = coords;
+    let [x, y] = bomb.coords;
 
     let directions = [
         [ 0,-1],
@@ -254,9 +256,9 @@ async function explodeBomb(coords, radius, time) {
 
     arena.setTile(x, y, ' ')
 
-    explosionEffect([x + 0.5, 0.5, y + 0.5], time)
+    explosionEffect([x + 0.5, 0.5, y + 0.5], time, bomb.playerInventory.bombColor)
 
-    playSound("explosion")
+    playSound("explosion", 0.2)
 
     let player1Died = false
     let player2Died = false
@@ -271,7 +273,7 @@ async function explodeBomb(coords, radius, time) {
     executePlayerDeaths(player1Died, player2Died)
 
     let delayInSec = 0.1;
-    for (let i = 1; i <= radius; i++) {
+    for (let i = 1; i <= bomb.radius; i++) {
         let newDirections = []
         for (let [dx, dy] of directions) {
             
@@ -288,9 +290,9 @@ async function explodeBomb(coords, radius, time) {
 
             if (destructible) {
                 arena.setTile(newX, newY, ' ');
-                explosionEffect([newX + 0.5, 0.5, newY + 0.5], time + i * delayInSec)
+                explosionEffect([newX + 0.5, 0.5, newY + 0.5], time + i * delayInSec, bomb.playerInventory.bombColor)
             }
-            else if (t === ' ') {
+            else if (t === ' ' || t === 'B') {
                 playersDied = checkPlayerDeaths(newX, newY)
                 if(playersDied % 2  === 1) {
                     if(!player1Died) {
@@ -307,7 +309,7 @@ async function explodeBomb(coords, radius, time) {
                 }
 
 
-                explosionEffect([newX + 0.5, 0.5, newY + 0.5], time + i * delayInSec)
+                explosionEffect([newX + 0.5, 0.5, newY + 0.5], time + i * delayInSec, bomb.playerInventory.bombColor)
 
                 newDirections.push([dx, dy])
             }
@@ -342,10 +344,12 @@ function executePlayerDeaths(player1Died, player2Died) {
     if(player1Died) {
         player2.score++
         player1.kill()
+        playSound("playerDeath")
     }
     if(player2Died) {
         player1.score++
         player2.kill()
+        playSound("playerDeath")
     }
     if(player1.lives < 1 || player2.lives < 1) {
         const winner = player1.lives > player2.lives ? "Player 1 wins" : (player1.lives === player2.lives ? "Draw" : "Player 2 Wins")
@@ -362,8 +366,9 @@ function checkPlayerExploded(bombPos, playerPos) {
     return false
 }
 
-function playSound(sound) {
+function playSound(sound, volume = 1) {
     let explosionSound = new Audio('/res/audio/' + sound + '.mp3')
+    explosionSound.volume = volume
     explosionSound.play()
 
     explosionSound.onended = function() {
@@ -420,7 +425,7 @@ export function RenderFrame()
     lastTime = time;
 
     checkPowerups()
-    if(time > timeForNewPowerup && powerUps.length < 5) {
+    if(time > timeForNewPowerup && powerUps.length < 10) {
         addRandomPowerup(time, 5)
     }
 
@@ -546,7 +551,7 @@ export function RenderFrame()
     renderData.pushMatrix(cam.projectionMatrix);
     renderData.pushMatrix(cam.invViewMatrix);
     renderData.pushMatrix(cam.invProjectionMatrix);
-    let lightPos = [averagePosition[0] + 2, 10, averagePosition[2] + Math.sin(time) * 2];
+    let lightPos = [averagePosition[0] + Math.sin(time * 0.1) * 2, 10, averagePosition[2] + Math.cos(time * 0.1) * 2];
     let lightCenter = averagePosition;
     let lightDirection = [lightCenter[0] - lightPos[0], lightCenter[1] - lightPos[1], lightCenter[2] - lightPos[2]];
     let halfDist = distanceOfPositions * 0.5 + 8;
@@ -571,7 +576,7 @@ export function RenderFrame()
     }
 }
 
-function explosionEffect(position, time) {
+function explosionEffect(position, time, color = [1, 0.631, 0]) {
     
         // Debree
         for(let i = 0; i < 5; i++)
@@ -599,7 +604,7 @@ function explosionEffect(position, time) {
             particle.position = [position[0], position[1], position[2]];
             particle.velocity = [(Math.random() - 0.5) * 2.0, (Math.random() - 0.5) * 2.0, (Math.random() - 0.5) * 2.0];
             particle.colorStart = [1, 0.631, 0];
-            particle.colorEnd = [1, 0.631, 0];
+            particle.colorEnd = color;
             particle.radiusStart = 0.5;
             particle.radiusEnd = 2.0;
             particle.rotationStart = Math.random();
@@ -617,7 +622,7 @@ function explosionEffect(position, time) {
             particle.position = [position[0], position[1], position[2]];
             particle.velocity = [0, 0, 0];
             particle.colorStart = [1, 1, 0];
-            particle.colorEnd = [1, 0, 0];
+            particle.colorEnd = color;
             particle.radiusStart = 1.0;
             particle.radiusEnd = 2.0;
             particle.rotationStart = Math.random();
@@ -635,8 +640,8 @@ function explosionEffect(position, time) {
         particle.radiusStart = 0.1;
         particle.radiusEnd = 2.0;
         particle.gravityStrength = 0.0;
-        particle.colorStart = [1, 0.631, 0];
-        particle.colorEnd = [1, 0.631, 0];
+        particle.colorStart = color;
+        particle.colorEnd = color;
         particle.rotationStart = Math.random() * 6.283;
         particle.rotationEnd = particle.rotationStart;
         particle.texCoord = [6 / 8, 6 / 8, 7 / 8, 7 / 8];
