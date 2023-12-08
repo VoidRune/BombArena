@@ -67,7 +67,6 @@ function addPowerup(type, position, particleSystem) {
     particle.lifetime = 9999999
     particle.texCoord = powerUpParticles[type]
 
-    console.log(particle)
     powerUps.push({
         type: type,
         position: position,
