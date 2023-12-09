@@ -119,11 +119,13 @@ function checkPowerups() {
             dirty = true
             powerUp.particle.lifetime = 0
             player1.addPowerup(powerUp.type)
+            player1.score++
             playSound("powerup", 0.3)
         } else if (checkPlayerExploded(powerUp.position, player2.position)) {
             dirty = true
             powerUp.particle.lifetime = 0
             player2.addPowerup(powerUp.type)
+            player2.score++
             playSound("powerup", 0.3)
         } else {
             newPowerUps.push(powerUp)
@@ -162,14 +164,14 @@ export async function Init()
     player1HUD.string = ""
     player1HUD.position = [20, 100]
     player1HUD.color = [1, 1, 1]
-    player1HUD.scale = 300
+    player1HUD.scale = 400
     fontGenerator.addText(player1HUD)
 
     player2HUD = new Text()
     player2HUD.string = ""
-    player2HUD.position = [canvas.width - 500, 100]
+    player2HUD.position = [canvas.width - 650, 100]
     player2HUD.color = [1, 1, 1]
-    player2HUD.scale = 300
+    player2HUD.scale = 400
     fontGenerator.addText(player2HUD)
     
     let crystal = resourceCache.addMesh(await loadMesh('/res/meshes/crystal.obj'));
@@ -341,12 +343,12 @@ function checkPlayerDeaths(x, y) {
 
 function executePlayerDeaths(player1Died, player2Died, time) {
     if(player1Died && player1.invincibleTime < time) {
-        player2.score++
+        player2.score += 8
         player1.kill(time)
         playSound("playerDeath")
     }
     if(player2Died && player2.invincibleTime < time) {
-        player1.score++
+        player1.score += 8
         player2.kill(time)
         playSound("playerDeath")
     }
@@ -573,7 +575,7 @@ export function RenderFrame()
     renderData.pushMatrix(cam.projectionMatrix);
     renderData.pushMatrix(cam.invViewMatrix);
     renderData.pushMatrix(cam.invProjectionMatrix);
-    let lightPos = [averagePosition[0] + Math.sin(time * 0.1) * 2, 10, averagePosition[2] + Math.cos(time * 0.1) * 2];
+    let lightPos = [averagePosition[0] + Math.sin(time * 0.1) * 5, 10, averagePosition[2] + Math.cos(time * 0.1) * 5];
     let lightCenter = averagePosition;
     let lightDirection = [lightCenter[0] - lightPos[0], lightCenter[1] - lightPos[1], lightCenter[2] - lightPos[2]];
     let halfDist = distanceOfPositions * 0.5 + 8;
