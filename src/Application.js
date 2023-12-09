@@ -208,7 +208,7 @@ export async function Init()
 
 function placeBomb(player, time) {
     const coords = [Math.floor(player.position[0]), Math.floor(player.position[2])]
-    if(player.inventory.bombs < 1 || arena.getTile(coords[0], coords[1]) !== ' ') {
+    if(player.inventory.bombs < 1 || arena.getTile(coords[0], coords[1]) !== ' ' || player.dead) {
         return
     }
     player.inventory.bombs--
@@ -269,7 +269,7 @@ async function explodeBomb(bomb, time) {
     if(playersDied >= 2) {
         player2Died = true
     }
-    executePlayerDeaths(player1Died, player2Died)
+    executePlayerDeaths(player1Died, player2Died, time)
 
     let delayInSec = 0.1;
     for (let i = 1; i <= bomb.radius; i++) {
@@ -296,13 +296,13 @@ async function explodeBomb(bomb, time) {
                 if(playersDied % 2  === 1) {
                     if(!player1Died) {
                         player1Died = true
-                        executePlayerDeaths(true, false)
+                        executePlayerDeaths(true, false, time)
                     }
                 }
                 if(playersDied >= 2) {
                     if(!player2Died) {
                         player2Died = true
-                        executePlayerDeaths(false, true)
+                        executePlayerDeaths(false, true, time)
 
                     }
                 }
@@ -339,15 +339,15 @@ function checkPlayerDeaths(x, y) {
     return result
 }
 
-function executePlayerDeaths(player1Died, player2Died) {
-    if(player1Died) {
+function executePlayerDeaths(player1Died, player2Died, time) {
+    if(player1Died && player1.invincibleTime < time) {
         player2.score++
-        player1.kill()
+        player1.kill(time)
         playSound("playerDeath")
     }
-    if(player2Died) {
+    if(player2Died && player2.invincibleTime < time) {
         player1.score++
-        player2.kill()
+        player2.kill(time)
         playSound("playerDeath")
     }
     if(player1.lives < 1 || player2.lives < 1) {
@@ -430,10 +430,13 @@ export function RenderFrame()
 
     let velocity1 = [0, 0, 0];
 
-    if (input.keys['KeyD']) { velocity1[0] += 1; }
-    if (input.keys['KeyA']) { velocity1[0] -= 1; }
-    if (input.keys['KeyW']) { velocity1[2] += 1; }
-    if (input.keys['KeyS']) { velocity1[2] -= 1; }
+    if(!player1.dead) {
+        if (input.keys['KeyD']) { velocity1[0] += 1; }
+        if (input.keys['KeyA']) { velocity1[0] -= 1; }
+        if (input.keys['KeyW']) { velocity1[2] += 1; }
+        if (input.keys['KeyS']) { velocity1[2] -= 1; }
+    }
+    
     
     let angle1 = Math.atan2(-velocity1[2], velocity1[0]) * 180 / Math.PI - 90;
     if (velocity1[0] != 0 || velocity1[2] != 0)
@@ -454,10 +457,13 @@ export function RenderFrame()
         player1.inventory.lastPlaced = [-1, -1];
 
     let velocity2 = [0, 0, 0];
-    if (input.keys['ArrowRight']) { velocity2[0] += 1; }
-    if (input.keys['ArrowLeft']) { velocity2[0] -= 1; }
-    if (input.keys['ArrowUp']) { velocity2[2] += 1; }
-    if (input.keys['ArrowDown']) { velocity2[2] -= 1; }
+    if(!player2.dead) {
+        if (input.keys['ArrowRight']) { velocity2[0] += 1; }
+        if (input.keys['ArrowLeft']) { velocity2[0] -= 1; }
+        if (input.keys['ArrowUp']) { velocity2[2] += 1; }
+        if (input.keys['ArrowDown']) { velocity2[2] -= 1; }
+    }
+    
 
     
     let angle2 = Math.atan2(-velocity2[2], velocity2[0]) * 180 / Math.PI - 90;
@@ -521,8 +527,26 @@ export function RenderFrame()
     checkBombs(time)
     //player1Batch.reset();
     //player1Batch.addInstance([cam.position[0], 1, 1]);
-    player1Batch.updateInstance(0, player1.position, [0, player1.angle, 0]);
-    player2Batch.updateInstance(0, player2.position, [0, player2.angle, 0]);
+    if(!player1.dead) {
+        player1Batch.updateInstance(0, player1.position, [0, player1.angle, 0]);
+        
+    } else {
+        player1Batch.updateInstance(0, [-100, 1, 0], [0, 0, 0])
+        if(player1.deadTime < time) {
+            player1.dead = false
+            player1.resetPosition()
+        }
+    }
+    if(!player2.dead) {
+        player2Batch.updateInstance(0, player2.position, [0, player2.angle, 0]);
+    } else {
+        player2Batch.updateInstance(0, [-100, 1, 0], [0, 0, 0])
+        if(player2.deadTime < time) {
+            player2.dead = false
+            player2.resetPosition()
+        }
+    }
+    
 
     // Camera in the average position between the two players
     // Offset scaled by their distance
