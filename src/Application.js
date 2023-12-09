@@ -351,9 +351,8 @@ function executePlayerDeaths(player1Died, player2Died, time) {
         playSound("playerDeath")
     }
     if(player1.lives < 1 || player2.lives < 1) {
-        const winner = player1.lives > player2.lives ? "Player 1 wins" : (player1.lives === player2.lives ? "Draw" : "Player 2 Wins")
-        alert(winner)
-        window.location.reload()
+        const winner = player1.lives > player2.lives ? "Player 1 Wins!" : (player1.lives === player2.lives ? "Draw!" : "Player 2 Wins!")
+        finishGame(winner)
     }
 
 }
@@ -671,4 +670,16 @@ function explosionEffect(position, time, color = [1, 0.631, 0]) {
         particle.lifetime = 0.15;
         particleSystem.emit(time, particle);
 
+}
+
+function finishGame(winner) {
+    pause()
+
+    document.getElementById("gameOverCover").style.display = "flex"
+
+    document.getElementById("winner").innerText = winner
+
+    document.getElementById("restartButton").addEventListener('click', () => {
+        window.location.reload()
+    })
 }

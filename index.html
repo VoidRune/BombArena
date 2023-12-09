@@ -30,6 +30,11 @@
         </div>
         
     </div>
+    <div id="gameOverCover" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: none; justify-content: center; align-items: center; flex-direction: column; color: white; background: #000000b0; text-align: center">
+        <h1 style="font-size: 3rem" id="winner"></h1>
+        
+        <button id="restartButton" style="margin-top: 1rem; padding: 1rem; font-size: 1.16rem; border: none; outline: none; border-radius: 0.5rem; cursor: pointer;">Play Again</button>
+    </div>
     <canvas width="1280" height="720"></canvas>
     <canvas id="hiddenCanvas" width="1280" height="720" style="opacity: 0;"></canvas>
     <script type="module" src="src/main.js"></script>
