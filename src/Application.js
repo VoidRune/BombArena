@@ -174,8 +174,8 @@ export async function Init()
     player2HUD.scale = 400
     fontGenerator.addText(player2HUD)
     
-    let crystal = resourceCache.addMesh(await loadMesh('/res/meshes/crystal.obj'));
-    let crystalTexture = resourceCache.addMaterial(await loadImageRGBA('/res/textures/CrystalShort/albedo.jpeg'), await loadImageRGBA('/res/textures/CrystalShort/normal.png'));
+    let crystal = resourceCache.addMesh(await loadMesh('../res/meshes/crystal.obj'));
+    let crystalTexture = resourceCache.addMaterial(await loadImageRGBA('../res/textures/CrystalShort/albedo.jpeg'), await loadImageRGBA('/res/textures/CrystalShort/normal.png'));
 
     crystalBatch.setMesh(crystal);
     crystalBatch.setTexture(crystalTexture);
@@ -192,9 +192,9 @@ export async function Init()
     }
 
     // Initialize player meshes, textures and positions
-    let crewmate = resourceCache.addMesh(await loadMesh('/res/meshes/crewmate.obj'));
-    let redCrewmate = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Crewmate/albedo1.png'), await loadImageRGBA('/res/textures/Crewmate/normal.png'));
-    let blueCrewmate = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Crewmate/albedo2.png'), await loadImageRGBA('/res/textures/Crewmate/normal.png'));
+    let crewmate = resourceCache.addMesh(await loadMesh('../res/meshes/crewmate.obj'));
+    let redCrewmate = resourceCache.addMaterial(await loadImageRGBA('../res/textures/Crewmate/albedo1.png'), await loadImageRGBA('../res/textures/Crewmate/normal.png'));
+    let blueCrewmate = resourceCache.addMaterial(await loadImageRGBA('../res/textures/Crewmate/albedo2.png'), await loadImageRGBA('../res/textures/Crewmate/normal.png'));
 
     player1Batch.setMesh(crewmate);
     player1Batch.setTexture(redCrewmate)

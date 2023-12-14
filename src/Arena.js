@@ -67,25 +67,25 @@ export default class Arena
     async Initialize(resourceCache)
     {
 
-        let wallMesh = resourceCache.addMesh(await loadMesh('/res/meshes/wall.obj'));
-        let floorMesh = resourceCache.addMesh(await loadMesh('/res/meshes/floor.obj'));
-        let tombstoneMesh = resourceCache.addMesh(await loadMesh('/res/meshes/tombstone.obj'));
-        let barrelMesh = resourceCache.addMesh(await loadMesh('/res/meshes/barrel.obj'));
-        let couldronMesh = resourceCache.addMesh(await loadMesh('/res/meshes/couldron.obj'));
-        let bottleMesh = resourceCache.addMesh(await loadMesh('/res/meshes/bottleShort.obj'));
-        let candleStandMesh = resourceCache.addMesh(await loadMesh('/res/meshes/candleStand.obj'));
-        let barStoolMesh = resourceCache.addMesh(await loadMesh('/res/meshes/barStool.obj'));
-        let chairMesh = resourceCache.addMesh(await loadMesh('/res/meshes/chair.obj'));
-        let bombMesh = resourceCache.addMesh(await loadMesh('/res/meshes/bomb.obj'))
+        let wallMesh = resourceCache.addMesh(await loadMesh('../res/meshes/wall.obj'));
+        let floorMesh = resourceCache.addMesh(await loadMesh('../res/meshes/floor.obj'));
+        let tombstoneMesh = resourceCache.addMesh(await loadMesh('../res/meshes/tombstone.obj'));
+        let barrelMesh = resourceCache.addMesh(await loadMesh('../res/meshes/barrel.obj'));
+        let couldronMesh = resourceCache.addMesh(await loadMesh('../res/meshes/couldron.obj'));
+        let bottleMesh = resourceCache.addMesh(await loadMesh('../res/meshes/bottleShort.obj'));
+        let candleStandMesh = resourceCache.addMesh(await loadMesh('../res/meshes/candleStand.obj'));
+        let barStoolMesh = resourceCache.addMesh(await loadMesh('../res/meshes/barStool.obj'));
+        let chairMesh = resourceCache.addMesh(await loadMesh('../res/meshes/chair.obj'));
+        let bombMesh = resourceCache.addMesh(await loadMesh('../res/meshes/bomb.obj'))
         
-        let sandstone = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Sandstone/albedo.png'), await loadImageRGBA('/res/textures/Sandstone/normal.png'));
-        let greystone = resourceCache.addMaterial(await loadImageRGBA('/res/textures/GreyStone/albedo.png'), await loadImageRGBA('/res/textures/GreyStone/normal.png'));
-        let barrelTexture = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Barrel/albedo.png'), await loadImageRGBA('/res/textures/Barrel/normal.png'));
-        let couldronTexture = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Couldron/albedo.png'), await loadImageRGBA('/res/textures/Couldron/normal.png'));
-        let bottleTexture = resourceCache.addMaterial(await loadImageRGBA('/res/textures/BottleShort/albedo.png'), await loadImageRGBA('/res/textures/BottleShort/normal.png'));
-        let candleStandTexture = resourceCache.addMaterial(await loadImageRGBA('/res/textures/CandleStand/albedo.png'), await loadImageRGBA('/res/textures/CandleStand/normal.png'));
-        let barStoolTexture = resourceCache.addMaterial(await loadImageRGBA('/res/textures/BarStool/albedo.png'), await loadImageRGBA('/res/textures/BarStool/normal.png'));
-        let chairTexture = resourceCache.addMaterial(await loadImageRGBA('/res/textures/Chair/albedo.png'), await loadImageRGBA('/res/textures/Chair/normal.png'));
+        let sandstone = resourceCache.addMaterial(await loadImageRGBA('../res/textures/Sandstone/albedo.png'), await loadImageRGBA('../res/textures/Sandstone/normal.png'));
+        let greystone = resourceCache.addMaterial(await loadImageRGBA('../res/textures/GreyStone/albedo.png'), await loadImageRGBA('../res/textures/GreyStone/normal.png'));
+        let barrelTexture = resourceCache.addMaterial(await loadImageRGBA('../res/textures/Barrel/albedo.png'), await loadImageRGBA('../res/textures/Barrel/normal.png'));
+        let couldronTexture = resourceCache.addMaterial(await loadImageRGBA('../res/textures/Couldron/albedo.png'), await loadImageRGBA('../res/textures/Couldron/normal.png'));
+        let bottleTexture = resourceCache.addMaterial(await loadImageRGBA('../res/textures/BottleShort/albedo.png'), await loadImageRGBA('../res/textures/BottleShort/normal.png'));
+        let candleStandTexture = resourceCache.addMaterial(await loadImageRGBA('../res/textures/CandleStand/albedo.png'), await loadImageRGBA('../res/textures/CandleStand/normal.png'));
+        let barStoolTexture = resourceCache.addMaterial(await loadImageRGBA('../res/textures/BarStool/albedo.png'), await loadImageRGBA('../res/textures/BarStool/normal.png'));
+        let chairTexture = resourceCache.addMaterial(await loadImageRGBA('../res/textures/Chair/albedo.png'), await loadImageRGBA('../res/textures/Chair/normal.png'));
 
 
         let wall = new Tile();
