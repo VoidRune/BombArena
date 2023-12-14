@@ -134,7 +134,7 @@ export default class Renderer
 
         this.finalCompositionBindGroup;
 
-        this.fontGenerator = new FontGenerator('../../res/font/Droidsansmono_ttf.csv');
+        this.fontGenerator = new FontGenerator('/res/font/Droidsansmono_ttf.csv');
 
         this.resourceCache = new ResourceCache(device);
         this.particleSystem = new ParticleSystem();
@@ -148,15 +148,15 @@ export default class Renderer
         await this.fontGenerator.init();
 
 
-        const shadowmapVertes = await (await fetch("../../res/shaders/shadowmapVertex.wgsl")).text();
-        const vertexShader = await (await fetch("../../res/shaders/vertex.wgsl")).text();
-        const fragmentShader = await (await fetch("../../res/shaders/fragment.wgsl")).text();
-        const fontVertexShader = await (await fetch("../../res/shaders/fontVertex.wgsl")).text();
-        const fontFragmentShader = await (await fetch("../../res/shaders/fontFragment.wgsl")).text();
-        const billboardVertexShader = await (await fetch("../../res/shaders/billboardVertex.wgsl")).text();
-        const billboardFragmentShader = await (await fetch("../../res/shaders/billboardFragment.wgsl")).text();
-        const finalCompositionVertexShader = await (await fetch("../../res/shaders/presentVertex.wgsl")).text();
-        const finalCompositionFragmentShader = await (await fetch("../../res/shaders/presentFragment.wgsl")).text();
+        const shadowmapVertes = await (await fetch("/res/shaders/shadowmapVertex.wgsl")).text();
+        const vertexShader = await (await fetch("/res/shaders/vertex.wgsl")).text();
+        const fragmentShader = await (await fetch("/res/shaders/fragment.wgsl")).text();
+        const fontVertexShader = await (await fetch("/res/shaders/fontVertex.wgsl")).text();
+        const fontFragmentShader = await (await fetch("/res/shaders/fontFragment.wgsl")).text();
+        const billboardVertexShader = await (await fetch("/res/shaders/billboardVertex.wgsl")).text();
+        const billboardFragmentShader = await (await fetch("/res/shaders/billboardFragment.wgsl")).text();
+        const finalCompositionVertexShader = await (await fetch("/res/shaders/presentVertex.wgsl")).text();
+        const finalCompositionFragmentShader = await (await fetch("/res/shaders/presentFragment.wgsl")).text();
 
         const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
     
@@ -241,7 +241,7 @@ export default class Renderer
             }],
         };
         
-        let fontImageData = await loadImageRGBA('../../res/font/DroidSansMono.png');
+        let fontImageData = await loadImageRGBA('/res/font/DroidSansMono.png');
         let font = createTexture(device, fontImageData, false);
     
         this.quadVertices = new Float32Array(this.fontGenerator.vert);
